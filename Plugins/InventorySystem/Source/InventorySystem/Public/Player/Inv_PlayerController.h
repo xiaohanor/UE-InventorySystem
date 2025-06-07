@@ -17,25 +17,47 @@ class INVENTORYSYSTEM_API AInv_PlayerController : public APlayerController
 {
 	GENERATED_BODY()
 
+public:
+	AInv_PlayerController();
+	virtual void Tick(float DeltaTime) override;
+
 protected:
 	virtual void BeginPlay() override;
 	virtual void OnPossess(APawn* InPawn) override;
 	virtual void SetupInputComponent() override;
 
 private:
-	UPROPERTY(EditDefaultsOnly, Category="Inventory")
+	// 增强输入 //
+	UPROPERTY(EditDefaultsOnly, Category="Inventory|Input")
 	TObjectPtr<UInputMappingContext> DefaultIMC;
 
-	UPROPERTY(EditDefaultsOnly, Category="Inventory")
+	UPROPERTY(EditDefaultsOnly, Category="Inventory|Input")
 	TObjectPtr<UInputAction> PrimaryInteractAction;
+	
+	void PrimaryInteract();
+	// 增强输入 //
 
-	UPROPERTY(EditDefaultsOnly, Category="Inventory")
+	// HUD //
+	UPROPERTY(EditDefaultsOnly, Category="Inventory|HUD")
 	TSubclassOf<UInv_HUDWidget> HUDWidgetClass;
 
 	UPROPERTY()
 	TObjectPtr<UInv_HUDWidget> HUDWidget;
 
 	void InitializeHUD();
+	// HUD //
 
-	void PrimaryInteract();
+	// 物品追踪 //
+	UPROPERTY(EditDefaultsOnly, Category = "Inventory|ItemTrace")
+	double TraceLength;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Inventory|ItemTrace")
+	TEnumAsByte<ECollisionChannel> ItemTraceChannel;
+
+	TWeakObjectPtr<AActor> ThisActor;
+	TWeakObjectPtr<AActor> LastActor;
+
+	void ItemTrace();
+	// 物品追踪 //
+
 };

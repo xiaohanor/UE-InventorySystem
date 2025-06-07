@@ -7,7 +7,24 @@
 #include "EnhancedInputSubsystems.h"
 #include "InventorySystem.h"
 #include "Blueprint/UserWidget.h"
+#include "Interaction/Inv_Highlightable.h"
+#include "Items/Components/Inv_ItemComponent.h"
+#include "Kismet/GameplayStatics.h"
 #include "Widgets/HUD/Inv_HUDWidget.h"
+
+AInv_PlayerController::AInv_PlayerController()
+{
+	PrimaryActorTick.bCanEverTick = true;
+	TraceLength = 800.f;
+	ItemTraceChannel = ECC_GameTraceChannel1;
+}
+
+void AInv_PlayerController::Tick(float DeltaTime)
+{
+	Super::Tick(DeltaTime);
+
+	ItemTrace();
+}
 
 void AInv_PlayerController::BeginPlay()
 {
@@ -48,6 +65,53 @@ void AInv_PlayerController::InitializeHUD()
 	if (IsValid(HUDWidget))
 	{
 		HUDWidget->AddToPlayerScreen();
+	}
+}
+
+void AInv_PlayerController::ItemTrace()
+{
+	check(ItemTraceChannel);
+	if (!IsValid(GEngine) || !IsValid(GEngine->GameViewport)) return;
+
+	FVector2D ViewportSize;
+	GEngine->GameViewport->GetViewportSize(ViewportSize);
+	const FVector2D ViewportCenter = ViewportSize / 2.f;
+
+	FVector TraceStart;
+	FVector Forward;
+	if (!UGameplayStatics::DeprojectScreenToWorld(this, ViewportCenter, TraceStart, Forward)) return;
+
+	const FVector TraceEnd = TraceStart + Forward * TraceLength;
+	FHitResult HitResult;
+	GetWorld()->LineTraceSingleByChannel(HitResult, TraceStart, TraceEnd, ItemTraceChannel);
+
+	LastActor = ThisActor;
+	ThisActor = HitResult.GetActor();
+
+	if (!LastActor.IsValid())
+	{
+		if (IsValid(HUDWidget)) HUDWidget->HidePickupMessage();
+	}
+	
+	if (LastActor == ThisActor) return;
+
+	if (ThisActor.IsValid())
+	{
+		if (UActorComponent* HighLightable = ThisActor->FindComponentByInterface(UInv_Highlightable::StaticClass()); IsValid(HighLightable))
+		{
+			IInv_Highlightable::Execute_Highlight(HighLightable);
+			const UInv_ItemComponent* ItemComponent = ThisActor->FindComponentByClass<UInv_ItemComponent>();
+			if (!IsValid(ItemComponent)) return;
+			if (IsValid(HUDWidget)) HUDWidget->ShowPickupMessage(ItemComponent->GetPickupMessage());
+		}
+	}
+
+	if (LastActor.IsValid())
+	{
+		if (UActorComponent* HighLightable = LastActor->FindComponentByInterface(UInv_Highlightable::StaticClass()); IsValid(HighLightable))
+		{
+			IInv_Highlightable::Execute_UnHighlight(HighLightable);
+		}
 	}
 }
 

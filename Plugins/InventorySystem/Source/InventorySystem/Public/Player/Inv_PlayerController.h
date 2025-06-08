@@ -22,7 +22,7 @@ public:
 	AInv_PlayerController();
 	virtual void Tick(float DeltaTime) override;
 
-	UFUNCTION(Blueprintable)
+	UFUNCTION(BlueprintCallable, Category="Inventory")
 	void ToggleInventoryMenu();
 
 protected:

@@ -8,6 +8,7 @@
 #include "InventorySystem.h"
 #include "Blueprint/UserWidget.h"
 #include "Interaction/Inv_Highlightable.h"
+#include "InventoryManagement/Component/Inv_InventoryComponent.h"
 #include "Items/Components/Inv_ItemComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include "Widgets/HUD/Inv_HUDWidget.h"
@@ -24,6 +25,12 @@ void AInv_PlayerController::Tick(float DeltaTime)
 	Super::Tick(DeltaTime);
 
 	ItemTrace();
+}
+
+void AInv_PlayerController::ToggleInventoryMenu()
+{
+	if (!InventoryComponent.IsValid()) return;
+	InventoryComponent->ToggleInventoryMenu();
 }
 
 void AInv_PlayerController::BeginPlay()
@@ -44,6 +51,7 @@ void AInv_PlayerController::OnPossess(APawn* InPawn)
 		Subsystem->AddMappingContext(DefaultIMC, 0); // 0 表示优先级
 	}
 
+	InventoryComponent = FindComponentByClass<UInv_InventoryComponent>();
 	InitializeHUD();
 }
 
@@ -55,6 +63,7 @@ void AInv_PlayerController::SetupInputComponent()
 
 	// 将交互动作绑定到输入组件
 	EnhancedInputComponent->BindAction(PrimaryInteractAction, ETriggerEvent::Started, this, &AInv_PlayerController::PrimaryInteract);
+	EnhancedInputComponent->BindAction(ToggleInventoryMenuAction, ETriggerEvent::Started, this, &AInv_PlayerController::ToggleInventoryMenu);
 }
 
 void AInv_PlayerController::InitializeHUD()

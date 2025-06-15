@@ -5,7 +5,6 @@
 
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
-#include "InventorySystem.h"
 #include "Blueprint/UserWidget.h"
 #include "Interaction/Inv_Highlightable.h"
 #include "InventoryManagement/Component/Inv_InventoryComponent.h"
@@ -126,5 +125,10 @@ void AInv_PlayerController::ItemTrace()
 
 void AInv_PlayerController::PrimaryInteract()
 {
-	UE_LOG(LogInventory, Log, TEXT("Interact"));
+	if (!ThisActor.IsValid()) return;
+
+	UInv_ItemComponent* ItemComp = ThisActor->FindComponentByClass<UInv_ItemComponent>();
+	if (!IsValid(ItemComp) || !InventoryComponent.IsValid()) return;
+
+	InventoryComponent->TryAddItem(ItemComp);
 }

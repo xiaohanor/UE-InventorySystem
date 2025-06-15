@@ -21,6 +21,12 @@ class INVENTORYSYSTEM_API UInv_InventoryComponent : public UActorComponent
 public:
 	UInv_InventoryComponent();
 
+	UFUNCTION(Server, Reliable)
+	void Server_AddNewItem(UInv_ItemComponent* ItemComponent, int32 StackCount);
+
+	UFUNCTION(Server, Reliable)
+	void Server_AddStacksToItem(UInv_ItemComponent* ItemComponent, int32 StackCount, int32 Remainder);
+
 	void ToggleInventoryMenu();
 
 	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly, Category="Inventory")

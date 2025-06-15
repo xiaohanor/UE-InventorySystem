@@ -29,7 +29,37 @@ void UInv_InventoryComponent::ToggleInventoryMenu()
 
 void UInv_InventoryComponent::TryAddItem(UInv_ItemComponent* ItemComponent)
 {
-	NoRoomInInventory.Broadcast();
+	FInv_SlotAvailabilityResult Result = InventoryMenuWidget->HasRoomForItem(ItemComponent);
+
+	// 广播通知库存空间不足
+	if (Result.TotalRoomToFill == 0)
+	{
+		NoRoomInInventory.Broadcast();
+		return;
+	}
+
+	if (Result.Item.IsValid() && Result.bStackable)
+	{
+		// 这个物品在库存中存在，添加新的堆叠
+		// 只更新堆叠数量，不创建新的
+		Server_AddStacksToItem(ItemComponent, Result.TotalRoomToFill, Result.Remainder);
+	}
+	else if (Result.TotalRoomToFill > 0)
+	{
+		// 这个物品在库存中不存在，创建一个新的并更新所有相关插槽
+		Server_AddNewItem(ItemComponent, Result.bStackable ? Result.TotalRoomToFill : 0);
+	}
+}
+
+void UInv_InventoryComponent::Server_AddNewItem_Implementation(UInv_ItemComponent* ItemComponent, int32 StackCount)
+{
+	
+}
+
+void UInv_InventoryComponent::Server_AddStacksToItem_Implementation(UInv_ItemComponent* ItemComponent, int32 StackCount,
+	int32 Remainder)
+{
+	
 }
 
 void UInv_InventoryComponent::BeginPlay()

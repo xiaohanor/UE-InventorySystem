@@ -11,6 +11,7 @@
  * Item Manifest 包含所有创建新库存物品的必要数据
  */
 
+struct FInv_ItemFragment;
 class UInv_InventoryItem;
 
 USTRUCT(BlueprintType)
@@ -23,6 +24,11 @@ struct INVENTORYSYSTEM_API FInv_ItemManifest
 	FGameplayTag GetItemType() const { return ItemType; }
 
 private:
+	// 物品碎片
+	// meta = (ExcludeBaseStruct) 编辑时不包含基类
+	UPROPERTY(EditAnywhere, Category = "Inventory", meta = (ExcludeBaseStruct))
+	TArray<TInstancedStruct<FInv_ItemFragment>> Fragments;
+	
 	UPROPERTY(EditAnywhere, Category = "Inventory")
 	EInv_ItemCategory ItemCategory{EInv_ItemCategory::None};
 

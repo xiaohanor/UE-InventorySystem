@@ -17,8 +17,14 @@ class INVENTORYSYSTEM_API UInv_InventoryItem : public UObject
 
 public:
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
-
+	virtual bool IsSupportedForNetworking() const override { return true; }
+	
 	void SetItemManifest(const FInv_ItemManifest& Manifest);
+
+	// 获取 ItemManifest
+	const FInv_ItemManifest& GetItemManifest() const { return ItemManifest.Get<FInv_ItemManifest>(); }
+	// 获取 可变ItemManifest
+	FInv_ItemManifest& GetItemManifestMutable() { return ItemManifest.GetMutable<FInv_ItemManifest>(); }
 	
 private:
 	// FInstancedStruct 能够在同一个变量里，持有不同类型的结构体数据

@@ -30,6 +30,7 @@ public:
 	void Server_AddStacksToItem(UInv_ItemComponent* ItemComponent, int32 StackCount, int32 Remainder);
 
 	void ToggleInventoryMenu();
+	// 将物品作为子对象进行网络同步
 	void AddRepSubObj(UObject* SubObj);
 
 	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly, Category="Inventory")

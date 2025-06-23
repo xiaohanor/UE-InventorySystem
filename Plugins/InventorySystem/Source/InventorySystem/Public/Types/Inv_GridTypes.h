@@ -4,6 +4,9 @@
 
 class UInv_InventoryItem;
 
+/*
+ * 物品类别
+ */
 UENUM(BlueprintType)
 enum class EInv_ItemCategory : uint8
 {
@@ -16,6 +19,9 @@ enum class EInv_ItemCategory : uint8
 	None
 };
 
+/*
+ * 表示单个网格槽位的可用性信息
+ */
 USTRUCT()
 struct FInv_SlotAvailability
 {
@@ -24,14 +30,17 @@ struct FInv_SlotAvailability
 	FInv_SlotAvailability() {}
 	FInv_SlotAvailability(int32 ItemIndex, int32 Room, bool bHasItem) : Index(ItemIndex), AmountToFill(Room), bItemAtIndex(bHasItem) {}
 
-	// 库存插槽的索引
+	// 插槽的索引位置
 	int32 Index{INDEX_NONE};
-	// 剩余容量
+	// 该槽位可以填充的物品数量
 	int32 AmountToFill{0};
-	// 是否有物品
+	// 该索引位置是否已有物品
 	bool bItemAtIndex{false};
 };
 
+/*
+ * 包含完整的物品放置查询结果
+ */
 USTRUCT()
 struct FInv_SlotAvailabilityResult
 {
@@ -39,13 +48,14 @@ struct FInv_SlotAvailabilityResult
 
 	FInv_SlotAvailabilityResult() {}
 
-	// 物品
+	// 相关的库存物品引用
 	TWeakObjectPtr<UInv_InventoryItem> Item;
-	// 库存总容量
+	// 总共可以填充的物品数量
 	int32 TotalRoomToFill{0};
-	// 堆叠物品剩余容量
+	// 无法放置的剩余数量
 	int32 Remainder{0};
-	// 是否可堆叠
+	// 物品是否可堆叠
 	bool bStackable{false};
+	// 所有可用槽位的详细信息数组
 	TArray<FInv_SlotAvailability> SlotAvailabilities;
 };

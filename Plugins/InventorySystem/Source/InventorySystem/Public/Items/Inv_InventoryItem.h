@@ -17,6 +17,7 @@ class INVENTORYSYSTEM_API UInv_InventoryItem : public UObject
 
 public:
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+	// IsSupportedForNetworking 表示可以通过网络引用对象，作为子对象进行网络同步
 	virtual bool IsSupportedForNetworking() const override { return true; }
 	
 	void SetItemManifest(const FInv_ItemManifest& Manifest);
@@ -34,3 +35,12 @@ private:
 	FInstancedStruct ItemManifest;
 	
 };
+
+template<typename FragmentType>
+const FragmentType* GetFragment(const UInv_InventoryItem* Item, const FGameplayTag& Tag)
+{
+	if (!IsValid(Item)) return nullptr;
+
+	const FInv_ItemManifest& ItemManifest = Item->GetItemManifest();
+	return ItemManifest.GetTypeOfFragmentWithTag<FragmentType>(Tag);
+}

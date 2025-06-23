@@ -23,6 +23,11 @@ struct INVENTORYSYSTEM_API FInv_ItemManifest
 	EInv_ItemCategory GetItemCategory() const { return ItemCategory; }
 	FGameplayTag GetItemType() const { return ItemType; }
 
+	// 通过Tag获取碎片类型
+	template<typename T>
+	requires std::derived_from<T, FInv_ItemFragment>
+	const T* GetTypeOfFragmentWithTag(const FGameplayTag& Tag) const;
+
 private:
 	// 物品碎片
 	// meta = (ExcludeBaseStruct) 编辑时不包含基类
@@ -35,4 +40,20 @@ private:
 	UPROPERTY(EditAnywhere, meta = (Categories = "GameItems"),Category = "Inventory")
 	FGameplayTag ItemType;
 };
+
+template<typename T>
+	requires std::derived_from<T, FInv_ItemFragment>
+	const T* FInv_ItemManifest::GetTypeOfFragmentWithTag(const FGameplayTag& Tag) const
+{
+	for (const TInstancedStruct<FInv_ItemFragment>& Fragment : Fragments)
+	{
+		if (const T* FragmentPtr = Fragment.GetPtr<T>())
+		{
+			if (!FragmentPtr->GetFragmentTag().MatchesTagExact(Tag)) continue;	// Tag不匹配就跳过
+			return FragmentPtr;
+		}
+	}
+	
+	return nullptr;
+}
 

@@ -49,10 +49,13 @@ private:
 		const FInv_GridFragment* GridFragment,
 		const FInv_ImageFragment* ImageFragment,
 		const int32 Index);
+	void AddSlottedItemToCanvas(const int32 Index, const FInv_GridFragment* GridFragment, UInv_SlottedItemWidget* SlottedItem) const;
+	void UpdateGridSlots(UInv_InventoryItem* NewItem, const int32 Index);
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"),  Category = "Inventory")
 	EInv_ItemCategory ItemCategory;
 
+	// 网格插槽
 	UPROPERTY()
 	TArray<TObjectPtr<UInv_GridSlotWidget>> GridSlots;
 
@@ -62,8 +65,12 @@ private:
 	UPROPERTY(meta = (BindWidget))
 	TObjectPtr<UCanvasPanel> CanvasPanel;
 
+	// 插槽中的物品
 	UPROPERTY(EditAnywhere, Category = "Inventory")
 	TSubclassOf<UInv_SlottedItemWidget> SlottedItemClass;
+
+	UPROPERTY()
+	TMap<int32, TObjectPtr<UInv_SlottedItemWidget>> SlottedItems;
 
 	// 行数
 	UPROPERTY(EditAnywhere, Category = "Inventory")

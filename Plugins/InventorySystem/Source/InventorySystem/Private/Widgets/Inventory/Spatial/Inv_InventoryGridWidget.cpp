@@ -40,9 +40,13 @@ FInv_SlotAvailabilityResult UInv_InventoryGridWidget::HasRoomForItem(const FInv_
 {
 	FInv_SlotAvailabilityResult Result;
 	Result.TotalRoomToFill = 1;
+	Result.bStackable = true;
 
-	FInv_SlotAvailability SlotAvailability(0, 1, false);
+	FInv_SlotAvailability SlotAvailability(0, 2, false);
 	Result.SlotAvailabilities.Add(MoveTemp(SlotAvailability));
+
+	FInv_SlotAvailability SlotAvailability2(1, 3, false);
+	Result.SlotAvailabilities.Add(MoveTemp(SlotAvailability2));
 	return Result;
 }
 
@@ -59,7 +63,7 @@ void UInv_InventoryGridWidget::AddItemToIndices(const FInv_SlotAvailabilityResul
 	for (const auto& Availability : Result.SlotAvailabilities)
 	{
 		AddItemAtIndex(NewItem, Availability.Index, Result.bStackable, Availability.AmountToFill);
-		UpdateGridSlots(NewItem, Availability.Index);
+		UpdateGridSlots(NewItem, Availability.Index, Result.bStackable, Availability.AmountToFill);
 	}
 }
 
@@ -82,6 +86,7 @@ UInv_SlottedItemWidget* UInv_InventoryGridWidget::CreateSlottedItem(UInv_Invento
 	SlottedItem->SetInventoryItem(Item);
 	SetSlottedItemImage(SlottedItem, GridFragment, ImageFragment);
 	SlottedItem->SetGridIndex(Index);
+	SlottedItem->UpdateStackCount(bStackable ? StackAmount : 0);
 
 	return SlottedItem;
 }
@@ -97,15 +102,19 @@ void UInv_InventoryGridWidget::AddSlottedItemToCanvas(const int32 Index, const F
 	CanvasSlot->SetPosition(DrawPosWithPadding);
 }
 
-void UInv_InventoryGridWidget::UpdateGridSlots(UInv_InventoryItem* NewItem, const int32 Index)
+void UInv_InventoryGridWidget::UpdateGridSlots(UInv_InventoryItem* NewItem, const int32 Index, bool bStackableItem, const int32 StackAmount)
 {
 	check(GridSlots.IsValidIndex(Index));
-	
-	const FInv_GridFragment* GridFragment = GetFragment<FInv_GridFragment>(NewItem, FragmentTags::GridFragment);
-	if (!GridFragment) return;
 
-	// 获取格子尺寸，并设置格子为已占用
+	if (bStackableItem)
+	{
+		GridSlots[Index]->SetStackCount(StackAmount);
+	}
+	
+	// 获取格子尺寸
+	const FInv_GridFragment* GridFragment = GetFragment<FInv_GridFragment>(NewItem, FragmentTags::GridFragment);
 	const FIntPoint Dimensions = GridFragment ? GridFragment->GetGridSize() : FIntPoint(1, 1);
+	
 	UInv_InventoryStatics::ForEach2D(GridSlots, Index, Dimensions, Columns, [](UInv_GridSlotWidget* GridSlot)
 	{
 		GridSlot->SetOccupiedTexture();

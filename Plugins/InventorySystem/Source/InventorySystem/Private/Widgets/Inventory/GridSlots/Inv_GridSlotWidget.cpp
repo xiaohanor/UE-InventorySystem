@@ -5,6 +5,11 @@
 
 #include "Components/Image.h"
 
+void UInv_GridSlotWidget::SetInventoryItem(UInv_InventoryItem* Item)
+{
+	InventoryItem = Item;
+}
+
 void UInv_GridSlotWidget::SetOccupiedTexture()
 {
 	GridSlotState = EInv_GridSlotState::Occupied;

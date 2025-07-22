@@ -3,8 +3,10 @@
 
 #include "InventoryManagement/Component/Inv_InventoryComponent.h"
 
+#include "Items/Components/Inv_ItemComponent.h"
 #include "Net/UnrealNetwork.h"
 #include "Widgets/Inventory/InventoryBase/Inv_InventoryBaseWidget.h"
+#include "Items/Inv_InventoryItem.h"
 
 
 // Sets default values for this component's properties
@@ -37,6 +39,9 @@ void UInv_InventoryComponent::ToggleInventoryMenu()
 void UInv_InventoryComponent::TryAddItem(UInv_ItemComponent* ItemComponent)
 {
 	FInv_SlotAvailabilityResult Result = InventoryMenuWidget->HasRoomForItem(ItemComponent);
+
+	UInv_InventoryItem* FoundItem = InventoryList.FindFirstItemByType(ItemComponent->GetItemManifest().GetItemType());
+	Result.Item = FoundItem;
 
 	// 广播通知库存空间不足
 	if (Result.TotalRoomToFill == 0)

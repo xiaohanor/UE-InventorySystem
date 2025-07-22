@@ -26,6 +26,8 @@ public:
 	const FInv_ItemManifest& GetItemManifest() const { return ItemManifest.Get<FInv_ItemManifest>(); }
 	// 获取 可变ItemManifest
 	FInv_ItemManifest& GetItemManifestMutable() { return ItemManifest.GetMutable<FInv_ItemManifest>(); }
+
+	bool IsStackable() const;
 	
 private:
 	// FInstancedStruct 能够在同一个变量里，持有不同类型的结构体数据

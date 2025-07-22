@@ -28,6 +28,10 @@ struct INVENTORYSYSTEM_API FInv_ItemManifest
 	requires std::derived_from<T, FInv_ItemFragment>
 	const T* GetTypeOfFragmentWithTag(const FGameplayTag& Tag) const;
 
+	template<typename T>
+	requires std::derived_from<T, FInv_ItemFragment>
+	const T* GetTypeOfFragment() const;
+
 private:
 	// 物品碎片
 	// meta = (ExcludeBaseStruct) 编辑时不包含基类
@@ -50,6 +54,21 @@ template<typename T>
 		if (const T* FragmentPtr = Fragment.GetPtr<T>())
 		{
 			if (!FragmentPtr->GetFragmentTag().MatchesTagExact(Tag)) continue;	// Tag不匹配就跳过
+			return FragmentPtr;
+		}
+	}
+	
+	return nullptr;
+}
+
+template<typename T>
+	requires std::derived_from<T, FInv_ItemFragment>
+	const T* FInv_ItemManifest::GetTypeOfFragment() const
+{
+	for (const TInstancedStruct<FInv_ItemFragment>& Fragment : Fragments)
+	{
+		if (const T* FragmentPtr = Fragment.GetPtr<T>())
+		{
 			return FragmentPtr;
 		}
 	}

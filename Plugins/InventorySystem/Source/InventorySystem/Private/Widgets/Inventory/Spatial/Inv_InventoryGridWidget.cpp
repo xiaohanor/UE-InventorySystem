@@ -39,14 +39,58 @@ FInv_SlotAvailabilityResult UInv_InventoryGridWidget::HasRoomForItem(const UInv_
 FInv_SlotAvailabilityResult UInv_InventoryGridWidget::HasRoomForItem(const FInv_ItemManifest& Manifest)
 {
 	FInv_SlotAvailabilityResult Result;
-	Result.TotalRoomToFill = 1;
-	Result.bStackable = true;
 
-	FInv_SlotAvailability SlotAvailability(0, 2, false);
-	Result.SlotAvailabilities.Add(MoveTemp(SlotAvailability));
+	// 判断物品是否可堆叠
+	const FInv_StackableFragment* StackableFragment = Manifest.GetTypeOfFragment<FInv_StackableFragment>();
+	Result.bStackable = StackableFragment != nullptr;
 
-	FInv_SlotAvailability SlotAvailability2(1, 3, false);
-	Result.SlotAvailabilities.Add(MoveTemp(SlotAvailability2));
+	// 判断堆叠数量
+	const int32 MaxStackSize = StackableFragment ? StackableFragment->GetMaxStackSize() : 1;
+	int32 AmountToFill = StackableFragment ? StackableFragment->GetStackCount() : 1;
+
+	TSet<int32> CheckedIndices;
+	for (const auto& GridSlot : GridSlots)
+	{
+		// 没有需要填充的数量，跳出
+		if (AmountToFill == 0) break;
+
+		// 索引已经检查过了，跳过
+		if (IsIndexClaimed(CheckedIndices, GridSlot->GetIndex())) continue;
+
+		// 物品在网格边界内吗?
+		if (!IsInGridBounds(GridSlot->GetIndex(), GetItemDimensions(Manifest))) continue;
+
+		// 物品可以填充在该格子吗?
+		TSet<int32> TentativelyClaimed;	// 暂时占领的格子
+		if (!HasRoomAtIndex(GridSlot, GetItemDimensions(Manifest), CheckedIndices, TentativelyClaimed, Manifest.GetItemType(),MaxStackSize))
+		{
+			continue;
+		}
+
+		// 填充多少?
+		const int32 AmountToFillInSlot = DetermineFillAmountForSlot(Result.bStackable, MaxStackSize, AmountToFill, GridSlot);
+		if (AmountToFillInSlot == 0) continue;
+		
+		CheckedIndices.Append(TentativelyClaimed);
+		
+		// 更新剩余待填数量
+		Result.TotalRoomToFill += AmountToFillInSlot;
+		Result.SlotAvailabilities.Emplace(
+			FInv_SlotAvailability{
+				HasValidItem(GridSlot) ? GridSlot->GetUpperLeftIndex() : GridSlot->GetIndex(),
+				Result.bStackable ? AmountToFillInSlot : 0,
+				HasValidItem(GridSlot)
+			}
+		);
+
+		AmountToFill -= AmountToFillInSlot;
+
+		// 无法放置的剩余数量是多少
+		Result.Remainder = AmountToFill;
+
+		if (AmountToFill == 0) return Result;
+	}
+	
 	return Result;
 }
 
@@ -115,11 +159,119 @@ void UInv_InventoryGridWidget::UpdateGridSlots(UInv_InventoryItem* NewItem, cons
 	const FInv_GridFragment* GridFragment = GetFragment<FInv_GridFragment>(NewItem, FragmentTags::GridFragment);
 	const FIntPoint Dimensions = GridFragment ? GridFragment->GetGridSize() : FIntPoint(1, 1);
 	
-	UInv_InventoryStatics::ForEach2D(GridSlots, Index, Dimensions, Columns, [](UInv_GridSlotWidget* GridSlot)
+	UInv_InventoryStatics::ForEach2D(GridSlots, Index, Dimensions, Columns, [&](UInv_GridSlotWidget* GridSlot)
 	{
+		GridSlot->SetInventoryItem(NewItem);
+		GridSlot->SetUpperLeftIndex(Index);
 		GridSlot->SetOccupiedTexture();
+		GridSlot->SetAvailable(false);
 	});
 }
+
+bool UInv_InventoryGridWidget::HasRoomAtIndex(const UInv_GridSlotWidget* GridSlot, const FIntPoint& Dimensions,
+	const TSet<int32>& CheckedIndices, TSet<int32>& OutTentativelyClaimed, const FGameplayTag& ItemType,int32 MaxStackSize)
+{
+	bool bHasRoomAtIndex = true;
+
+	UInv_InventoryStatics::ForEach2D(GridSlots, GridSlot->GetIndex(), Dimensions, Columns, [&](const UInv_GridSlotWidget* SubGridSlot)
+	{
+		if (CheckSlotConstraints(GridSlot, SubGridSlot, CheckedIndices, OutTentativelyClaimed, ItemType, MaxStackSize))
+		{
+			OutTentativelyClaimed.Add(SubGridSlot->GetIndex());
+		}
+		else
+		{
+			bHasRoomAtIndex = false;
+		}
+	});
+	
+	return bHasRoomAtIndex;
+}
+
+bool UInv_InventoryGridWidget::CheckSlotConstraints(const UInv_GridSlotWidget* GridSlot, const UInv_GridSlotWidget* SubGridSlot,
+	const TSet<int32>& CheckedIndices, TSet<int32>& OutTentativelyClaimed, const FGameplayTag& ItemType,int32 MaxStackSize) const
+{
+	// 索引检查过?
+	if (IsIndexClaimed(CheckedIndices, SubGridSlot->GetIndex())) return false;
+	
+	// 有物品? 没有物品的格子不需要检查
+	if (!HasValidItem(SubGridSlot))
+	{
+		OutTentativelyClaimed.Add(SubGridSlot->GetIndex());
+		return true;
+	}
+	
+	// 这个格子是否为左上角（该物品的所占的第一格）?
+	if (!IsUpperLeftSlot(GridSlot, SubGridSlot)) return false;
+	
+	// 物品可重叠?
+	UInv_InventoryItem* SubItem = SubGridSlot->GetInventoryItem().Get();
+	if (!SubItem->IsStackable()) return false;
+
+	// 是同一类型的物品?
+	if (!DoesItemTypeMatched(SubItem, ItemType)) return false;
+	
+	// 如果可堆叠，是否有足够的堆叠空间?
+	if (SubGridSlot->GetStackCount() >= MaxStackSize) return false;
+	
+	return true;
+}
+
+FIntPoint UInv_InventoryGridWidget::GetItemDimensions(const FInv_ItemManifest& Manifest) const
+{
+	const FInv_GridFragment* GridFragment = Manifest.GetTypeOfFragment<FInv_GridFragment>();
+	return GridFragment ? GridFragment->GetGridSize() : FIntPoint(1, 1);
+}
+
+bool UInv_InventoryGridWidget::IsIndexClaimed(const TSet<int32>& CheckedIndices, const int32 Index) const
+{
+	return CheckedIndices.Contains(Index);
+}
+
+bool UInv_InventoryGridWidget::HasValidItem(const UInv_GridSlotWidget* GridSlot) const
+{
+	return GridSlot->GetInventoryItem().IsValid();
+}
+
+bool UInv_InventoryGridWidget::IsUpperLeftSlot(const UInv_GridSlotWidget* GridSlot,
+	const UInv_GridSlotWidget* SubGridSlot) const
+{
+	return SubGridSlot->GetUpperLeftIndex() == GridSlot->GetIndex();
+}
+
+bool UInv_InventoryGridWidget::DoesItemTypeMatched(const UInv_InventoryItem* Item, const FGameplayTag& ItemType) const
+{
+	return Item->GetItemManifest().GetItemType().MatchesTagExact(ItemType);
+}
+
+bool UInv_InventoryGridWidget::IsInGridBounds(const int32 StartIndex, const FIntPoint& ItemDimensions) const
+{
+	if (StartIndex < 0 || StartIndex >= GridSlots.Num()) return false;
+	const int32 EndColumn = (StartIndex % Columns) + ItemDimensions.X;
+	const int32 EndRow = (StartIndex / Columns) + ItemDimensions.Y;
+	return EndColumn <= Columns && EndRow <= Rows;
+}
+
+int32 UInv_InventoryGridWidget::DetermineFillAmountForSlot(const bool bStackable, const int32 MaxStackSize,
+	const int32 AmountToFill, const UInv_GridSlotWidget* GridSlot) const
+{
+	// 获取槽位剩余空间，填入数量小于则正常填入，否则填满
+	const int32 RoomInSlot = MaxStackSize - GetStackAmount(GridSlot);
+	return bStackable ? FMath::Min(AmountToFill, RoomInSlot) : 1;
+}
+
+int32 UInv_InventoryGridWidget::GetStackAmount(const UInv_GridSlotWidget* GridSlot) const
+{
+	int32 CurrentSlotStackCount = GridSlot->GetStackCount();
+	// 如果我们在一个不保存堆叠计数的槽位上，我们必须获取实际的堆叠计数.
+	if (const int32 UpperLeftIndex = GridSlot->GetUpperLeftIndex(); UpperLeftIndex != INDEX_NONE)
+	{
+		UInv_GridSlotWidget* UpperLeftGridSlot = GridSlots[UpperLeftIndex];
+		CurrentSlotStackCount = UpperLeftGridSlot->GetStackCount();
+	}
+	return CurrentSlotStackCount;
+}
+
 FVector2D UInv_InventoryGridWidget::GetDrawSize(const FInv_GridFragment* GridFragment) const
 {
 	// 计算图标的尺寸

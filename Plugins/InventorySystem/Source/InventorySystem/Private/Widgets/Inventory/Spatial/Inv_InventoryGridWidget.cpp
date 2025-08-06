@@ -23,7 +23,8 @@ void UInv_InventoryGridWidget::NativeOnInitialized()
 	ConstructGrid();
 
 	InventoryComponent = UInv_InventoryStatics::GetInventoryComponent(GetOwningPlayer());
-	InventoryComponent->OnItemAdded.AddDynamic(this, &UInv_InventoryGridWidget::AddItem);
+	InventoryComponent->OnItemAdded.AddDynamic(this, &ThisClass::AddItem);
+	InventoryComponent->OnStackChange.AddDynamic(this, &ThisClass::AddStacks);
 }
 
 FInv_SlotAvailabilityResult UInv_InventoryGridWidget::HasRoomForItem(const UInv_ItemComponent* ItemComponent)
@@ -120,6 +121,8 @@ void UInv_InventoryGridWidget::AddItemAtIndex(UInv_InventoryItem* Item, const in
 
 	UInv_SlottedItemWidget* SlottedItem = CreateSlottedItem(Item, bStackable, StackAmount, GridFragment, ImageFragment, Index);
 	AddSlottedItemToCanvas(Index, GridFragment, SlottedItem);
+
+	SlottedItems.Add(Index, SlottedItem);
 }
 
 UInv_SlottedItemWidget* UInv_InventoryGridWidget::CreateSlottedItem(UInv_InventoryItem* Item, const bool bStackable,
@@ -270,6 +273,27 @@ int32 UInv_InventoryGridWidget::GetStackAmount(const UInv_GridSlotWidget* GridSl
 		CurrentSlotStackCount = UpperLeftGridSlot->GetStackCount();
 	}
 	return CurrentSlotStackCount;
+}
+
+void UInv_InventoryGridWidget::AddStacks(const FInv_SlotAvailabilityResult& Result)
+{
+	if (!MatchesCategory(Result.Item.Get())) return;
+
+	for (const auto& Availability : Result.SlotAvailabilities)
+	{
+		if (Availability.bItemAtIndex)
+		{
+			const auto& GridSlot = GridSlots[Availability.Index];
+			const auto& SlottedItem = SlottedItems.FindChecked(Availability.Index);
+			SlottedItem->UpdateStackCount(GridSlot->GetStackCount() + Availability.AmountToFill);
+			GridSlot->SetStackCount(GridSlot->GetStackCount() + Availability.AmountToFill);
+		}
+		else
+		{
+			AddItemAtIndex(Result.Item.Get(), Availability.Index, Result.bStackable, Availability.AmountToFill);
+			UpdateGridSlots(Result.Item.Get(), Availability.Index, Result.bStackable, Availability.AmountToFill);
+		}
+	}
 }
 
 FVector2D UInv_InventoryGridWidget::GetDrawSize(const FInv_GridFragment* GridFragment) const

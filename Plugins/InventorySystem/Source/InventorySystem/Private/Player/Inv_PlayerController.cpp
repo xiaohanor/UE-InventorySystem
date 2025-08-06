@@ -36,12 +36,6 @@ void AInv_PlayerController::BeginPlay()
 {
 	Super::BeginPlay();
 
-}
-
-void AInv_PlayerController::OnPossess(APawn* InPawn)
-{
-	Super::OnPossess(InPawn);
-
 	// 获取增强输入子系统
 	UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(GetLocalPlayer());
 	if (IsValid(Subsystem))
@@ -72,7 +66,7 @@ void AInv_PlayerController::InitializeHUD()
 	HUDWidget = CreateWidget<UInv_HUDWidget>(this, HUDWidgetClass);
 	if (IsValid(HUDWidget))
 	{
-		HUDWidget->AddToPlayerScreen();
+		HUDWidget->AddToViewport();
 	}
 }
 

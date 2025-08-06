@@ -28,6 +28,8 @@ public:
 	FInv_ItemManifest& GetItemManifestMutable() { return ItemManifest.GetMutable<FInv_ItemManifest>(); }
 
 	bool IsStackable() const;
+	int32 GetTotalStackCount() const { return TotalStackCount; }
+	void SetTotalStackCount(int32 Count) { TotalStackCount = Count; }
 	
 private:
 	// FInstancedStruct 能够在同一个变量里，持有不同类型的结构体数据
@@ -35,6 +37,9 @@ private:
 	// 它告诉编辑器，当我们设置 FInstancedStruct 时，只在下拉列表里显示那些与 Inv_ItemManifest “相关”的结构体，让界面更整洁。
 	UPROPERTY(VisibleAnywhere, meta = (BaseStruct = "/Script/InventorySystem.Inv_ItemManifest"), Replicated)
 	FInstancedStruct ItemManifest;
+
+	UPROPERTY(Replicated)
+	int32 TotalStackCount{0};
 	
 };
 

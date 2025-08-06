@@ -11,6 +11,12 @@ UInv_ItemComponent::UInv_ItemComponent()
 {
 	PrimaryComponentTick.bCanEverTick = false;
 	PickupMessage = FString("E - Pick Up");
+
+	// 确保物品被销毁后能同步到客户端
+	if (IsValid(GetOwner()))
+	{
+		GetOwner()->SetReplicates(true);
+	}
 }
 
 void UInv_ItemComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -18,6 +24,12 @@ void UInv_ItemComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& O
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	DOREPLIFETIME(ThisClass, ItemManifest);
+}
+
+void UInv_ItemComponent::PickedUp()
+{
+	OnPickedUp();
+	GetOwner()->Destroy();
 }
 
 

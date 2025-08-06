@@ -32,6 +32,10 @@ struct INVENTORYSYSTEM_API FInv_ItemManifest
 	requires std::derived_from<T, FInv_ItemFragment>
 	const T* GetTypeOfFragment() const;
 
+	template<typename T>
+	requires std::derived_from<T, FInv_ItemFragment>
+	T* GetFragmentOfTypeMutable();
+
 private:
 	// 物品碎片
 	// meta = (ExcludeBaseStruct) 编辑时不包含基类
@@ -68,6 +72,21 @@ template<typename T>
 	for (const TInstancedStruct<FInv_ItemFragment>& Fragment : Fragments)
 	{
 		if (const T* FragmentPtr = Fragment.GetPtr<T>())
+		{
+			return FragmentPtr;
+		}
+	}
+	
+	return nullptr;
+}
+
+template<typename T>
+	requires std::derived_from<T, FInv_ItemFragment>
+	T* FInv_ItemManifest::GetFragmentOfTypeMutable()
+{
+	for (TInstancedStruct<FInv_ItemFragment>& Fragment : Fragments)
+	{
+		if (T* FragmentPtr = Fragment.GetMutablePtr<T>())
 		{
 			return FragmentPtr;
 		}

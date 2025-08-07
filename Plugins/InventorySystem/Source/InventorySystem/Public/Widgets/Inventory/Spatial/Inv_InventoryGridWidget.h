@@ -7,6 +7,7 @@
 #include "Types/Inv_GridTypes.h"
 #include "Inv_InventoryGridWidget.generated.h"
 
+class UInv_HoverItemWidget;
 struct FGameplayTag;
 struct FInv_ImageFragment;
 class UInv_SlottedItemWidget;
@@ -72,19 +73,29 @@ private:
 	bool IsInGridBounds(int32 StartIndex, const FIntPoint& ItemDimensions) const;
 	int32 DetermineFillAmountForSlot(const bool bStackable, const int32 MaxStackSize, const int32 AmountToFill, const UInv_GridSlotWidget* GridSlot) const;
 	int32 GetStackAmount(const UInv_GridSlotWidget* GridSlot) const;
+	bool IsRightClick(const FPointerEvent& MouseEvent) const;
+	bool IsLeftClick(const FPointerEvent& MouseEvent) const;
+	void PickUp(UInv_InventoryItem* ClickedInventoryItem, const int32 GridIndex);
+	void AssignHoverItem(UInv_InventoryItem* InventoryItem);
+	void AssignHoverItem(UInv_InventoryItem* InventoryItem, const int32 GridIndex, const int32 PreviousGridIndex);
+	void RemoveItemFromGrid(UInv_InventoryItem* InventoryItem, const int32 GridIndex);
 
 	UFUNCTION()
 	void AddStacks(const FInv_SlotAvailabilityResult& Result);
 
+	UFUNCTION()
+	void OnSlottedItemClicked(int32 GridIndex, const FPointerEvent& MouseEvent);
+
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"),  Category = "Inventory")
 	EInv_ItemCategory ItemCategory;
 
-	// 网格插槽
+	/* 网格插槽 */  
 	UPROPERTY()
 	TArray<TObjectPtr<UInv_GridSlotWidget>> GridSlots;
 
 	UPROPERTY(EditAnywhere, Category = "Inventory")
 	TSubclassOf<UInv_GridSlotWidget> GridSlotClass;
+	/* 网格插槽 */
 
 	UPROPERTY(meta = (BindWidget))
 	TObjectPtr<UCanvasPanel> CanvasPanel;
@@ -96,6 +107,14 @@ private:
 	UPROPERTY()
 	TMap<int32, TObjectPtr<UInv_SlottedItemWidget>> SlottedItems;
 
+	/* 物品悬停控件 */
+	UPROPERTY(EditAnywhere, Category = "Inventory")
+	TSubclassOf<UInv_HoverItemWidget> HoverItemClass;
+
+	UPROPERTY()
+	TObjectPtr<UInv_HoverItemWidget> HoverItem;
+	/* 物品悬停控件 */
+	
 	// 行数
 	UPROPERTY(EditAnywhere, Category = "Inventory")
 	int32 Rows;

@@ -27,6 +27,7 @@ class INVENTORYSYSTEM_API UInv_InventoryGridWidget : public UUserWidget
 
 public:
 	virtual void NativeOnInitialized() override;
+	virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
 	
 	EInv_ItemCategory GetItemCategory() const { return ItemCategory; }
 	FInv_SlotAvailabilityResult HasRoomForItem(const UInv_ItemComponent* ItemComponent);
@@ -79,6 +80,8 @@ private:
 	void AssignHoverItem(UInv_InventoryItem* InventoryItem);
 	void AssignHoverItem(UInv_InventoryItem* InventoryItem, const int32 GridIndex, const int32 PreviousGridIndex);
 	void RemoveItemFromGrid(UInv_InventoryItem* InventoryItem, const int32 GridIndex);
+	void UpdateTileParameters(const FVector2D& CanvasPosition, const FVector2D& MousePosition);
+	FIntPoint CalculateHoveredCoordinates(const FVector2D& CanvasPosition, const FVector2D& MousePosition) const;
 
 	UFUNCTION()
 	void AddStacks(const FInv_SlotAvailabilityResult& Result);
@@ -89,6 +92,10 @@ private:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"),  Category = "Inventory")
 	EInv_ItemCategory ItemCategory;
 
+	// 画布面板
+	UPROPERTY(meta = (BindWidget))
+	TObjectPtr<UCanvasPanel> CanvasPanel;
+
 	/* 网格插槽 */  
 	UPROPERTY()
 	TArray<TObjectPtr<UInv_GridSlotWidget>> GridSlots;
@@ -97,15 +104,13 @@ private:
 	TSubclassOf<UInv_GridSlotWidget> GridSlotClass;
 	/* 网格插槽 */
 
-	UPROPERTY(meta = (BindWidget))
-	TObjectPtr<UCanvasPanel> CanvasPanel;
-
-	// 插槽中的物品
+	/* 插槽内物品控件 */
 	UPROPERTY(EditAnywhere, Category = "Inventory")
 	TSubclassOf<UInv_SlottedItemWidget> SlottedItemClass;
 
 	UPROPERTY()
 	TMap<int32, TObjectPtr<UInv_SlottedItemWidget>> SlottedItems;
+	/* 插槽内物品控件 */
 
 	/* 物品悬停控件 */
 	UPROPERTY(EditAnywhere, Category = "Inventory")
@@ -127,4 +132,6 @@ private:
 	UPROPERTY(EditAnywhere, Category = "Inventory")
 	float TileSize;
 
+	FInv_TileParameters TileParameters;
+	FInv_TileParameters LastTileParameters;
 };

@@ -3,6 +3,7 @@
 
 #include "Widgets/Inventory/Spatial/Inv_InventoryGridWidget.h"
 
+#include "InventorySystem.h"
 #include "Blueprint/WidgetLayoutLibrary.h"
 #include "Components/CanvasPanel.h"
 #include "Components/CanvasPanelSlot.h"
@@ -28,30 +29,168 @@ void UInv_InventoryGridWidget::NativeOnInitialized()
 	InventoryComponent->OnStackChange.AddDynamic(this, &ThisClass::AddStacks);
 }
 
+void UInv_InventoryGridWidget::ConstructGrid()
+{
+	// 提前分配内存
+	GridSlots.Reserve(Rows * Columns);
+	
+	for (int32 i = 0; i < Rows; ++i)
+	{
+		for (int32 j = 0; j < Columns; ++j)
+		{
+			UInv_GridSlotWidget* GridSlot = CreateWidget<UInv_GridSlotWidget>(this, GridSlotClass);
+			CanvasPanel->AddChild(GridSlot);
+
+			const FIntPoint TilePosition = FIntPoint(j, i);
+			GridSlot->SetTileIndex(UInv_WidgetUtils::GetIndexFromPosition(TilePosition, Columns));
+
+			UCanvasPanelSlot* GridCPS = UWidgetLayoutLibrary::SlotAsCanvasSlot(GridSlot);
+			GridCPS->SetSize(FVector2D(TileSize));
+			GridCPS->SetPosition(TilePosition * TileSize);
+
+			GridSlots.Add(GridSlot);
+		}
+	}
+}
+
 void UInv_InventoryGridWidget::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 {
 	Super::NativeTick(MyGeometry, InDeltaTime);
 
 	const FVector2D CanvasPosition = UInv_WidgetUtils::GetWidgetPosition(CanvasPanel);
 	const FVector2D MousePosition = UWidgetLayoutLibrary::GetMousePositionOnViewport(GetOwningPlayer());
+	if (CursorExitedCanvas(CanvasPosition, UInv_WidgetUtils::GetWidgetSize(CanvasPanel), MousePosition)) return;
 
 	UpdateTileParameters(CanvasPosition, MousePosition);
 }
 
 void UInv_InventoryGridWidget::UpdateTileParameters(const FVector2D& CanvasPosition, const FVector2D& MousePosition)
 {
-	const FIntPoint HoveredTileCoordinates = CalculateHoveredCoordinates(CanvasPosition, MousePosition);
+	if (!bMouseWithinCanvas) return;
 	
+	// 计算图块象限、瓦片索引和坐标
+	const FIntPoint HoveredTileCoordinates = CalculateHoveredCoordinates(CanvasPosition, MousePosition);
 	LastTileParameters = TileParameters;
 	TileParameters.TileCoordinates = HoveredTileCoordinates;
 	TileParameters.TileIndex = UInv_WidgetUtils::GetIndexFromPosition(HoveredTileCoordinates, Columns);
+	TileParameters.TileQuadrant = CalculateTileQuadrant(CanvasPosition, MousePosition);
+	
+	OnTileParametersUpdated(TileParameters);
+}
+
+void UInv_InventoryGridWidget::OnTileParametersUpdated(const FInv_TileParameters& Parameters)
+{
+	if (!IsValid(HoverItem)) return;
+
+	// 获取悬停物品的尺寸
+	const FIntPoint Dimensions = HoverItem->GetGridDimensions();
+	// 计算高亮显示区域的起始坐标
+	const FIntPoint StartingCoordinate = CalculateStartingCoordinate(Parameters.TileCoordinates, Dimensions, Parameters.TileQuadrant);
+	
+	ItemDropIndex = UInv_WidgetUtils::GetIndexFromPosition(StartingCoordinate, Columns);
+	CurrentQueryResult = CheckHoverPosition(StartingCoordinate, Dimensions);
+
+	if (CurrentQueryResult.bHasSpace)
+	{
+		HighlightSlots(ItemDropIndex, Dimensions);
+		return;
+	}
+	UnHighlightSlots(LastHighlightedIndex, LastHighlightedDimensions);
+
+	if (CurrentQueryResult.ValidItem.IsValid() && GridSlots.IsValidIndex(CurrentQueryResult.UpperLeftIndex))
+	{
+		const FInv_GridFragment* GridFragment = GetFragment<FInv_GridFragment>(CurrentQueryResult.ValidItem.Get(), FragmentTags::GridFragment);
+		if (!GridFragment) return;
+
+		ChangeHoverType(CurrentQueryResult.UpperLeftIndex, GridFragment->GetGridSize(), EInv_GridSlotState::GrayedOut);
+	}
+}
+
+FIntPoint UInv_InventoryGridWidget::CalculateStartingCoordinate(const FIntPoint& Coordinate,
+	const FIntPoint& Dimensions, const EInv_TileQuadrant Quadrant) const
+{
+	const int32 HasEvenWidth = Dimensions.X % 2 == 0 ? 1 : 0; // 宽度是奇数的话为 0
+	const int32 HasEvenHeight = Dimensions.Y % 2 == 0 ? 1 : 0; // 高度是奇数的话为 0
+
+	FIntPoint StartingCoord;
+	switch (Quadrant)
+	{
+	case EInv_TileQuadrant::TopLeft:
+		StartingCoord.X = Coordinate.X - FMath::FloorToInt(0.5f * Dimensions.X);
+		StartingCoord.Y = Coordinate.Y - FMath::FloorToInt(0.5f * Dimensions.Y);
+		break;
+	case EInv_TileQuadrant::TopRight:
+		StartingCoord.X = Coordinate.X - FMath::FloorToInt(0.5f * Dimensions.X) + HasEvenWidth;
+		StartingCoord.Y = Coordinate.Y - FMath::FloorToInt(0.5f * Dimensions.Y);
+		break;
+	case EInv_TileQuadrant::BottomLeft:
+		StartingCoord.X = Coordinate.X - FMath::FloorToInt(0.5f * Dimensions.X);
+		StartingCoord.Y = Coordinate.Y - FMath::FloorToInt(0.5f * Dimensions.Y) + HasEvenHeight;
+		break;
+	case EInv_TileQuadrant::BottomRight:
+		StartingCoord.X = Coordinate.X - FMath::FloorToInt(0.5f * Dimensions.X) + HasEvenWidth;
+		StartingCoord.Y = Coordinate.Y - FMath::FloorToInt(0.5f * Dimensions.Y) + HasEvenHeight;
+		break;
+	default:
+		UE_LOG(LogInventory, Error, TEXT("无效的象限"))
+		return FIntPoint(-1, -1);
+	}
+	return StartingCoord;
+}
+
+FInv_SpaceQueryResult UInv_InventoryGridWidget::CheckHoverPosition(const FIntPoint& Position,
+	const FIntPoint& Dimensions)
+{
+	FInv_SpaceQueryResult Result;
+
+	// 在网格边界中吗？
+	if (!IsInGridBounds(UInv_WidgetUtils::GetIndexFromPosition(Position, Columns), Dimensions)) return Result;
+	Result.bHasSpace = true;
+	// 如果多个索引被同一项占用，我们需要查看它们是否都具有相同的左上角索引
+	TSet<int32> OccupiedUpperLeftIndices;
+	UInv_InventoryStatics::ForEach2D(GridSlots, UInv_WidgetUtils::GetIndexFromPosition(Position, Columns), Dimensions, Columns, [&](const UInv_GridSlotWidget* GridSlot)
+	{
+		if (HasValidItem(GridSlot))
+		{
+			OccupiedUpperLeftIndices.Add(GridSlot->GetUpperLeftIndex());
+			Result.bHasSpace = false;
+		}
+	});
+	// 如果被占用，是否只有一个物品（能够交换）
+	if (OccupiedUpperLeftIndices.Num() == 1)
+	{
+		const int32 Index = *OccupiedUpperLeftIndices.CreateConstIterator();
+		Result.ValidItem = GridSlots[Index]->GetInventoryItem();
+		Result.UpperLeftIndex = GridSlots[Index]->GetUpperLeftIndex();
+	}
+	return Result;
 }
 
 FIntPoint UInv_InventoryGridWidget::CalculateHoveredCoordinates(const FVector2D& CanvasPosition,
-	const FVector2D& MousePosition) const
+                                                                const FVector2D& MousePosition) const
 {
 	return FIntPoint{static_cast<int32>(FMath::FloorToInt((MousePosition.X - CanvasPosition.X) / TileSize)),
 					static_cast<int32>(FMath::FloorToInt((MousePosition.Y - CanvasPosition.Y) / TileSize))};
+}
+
+EInv_TileQuadrant UInv_InventoryGridWidget::CalculateTileQuadrant(const FVector2D& CanvasPosition,
+	const FVector2D& MousePosition) const
+{
+	// 计算当前图块的相对位置
+	const float TileLocalX = FMath::Fmod(CanvasPosition.X - MousePosition.X, TileSize);
+	const float TileLocalY = FMath::Fmod(CanvasPosition.Y - MousePosition.Y, TileSize);
+
+	// 判断光标在哪一个象限
+	const bool bIsTop = TileLocalY < TileSize / 2.f;
+	const bool bIsLeft = TileLocalX < TileSize / 2.f;
+	
+	EInv_TileQuadrant HoveredTileQuadrant{EInv_TileQuadrant::None};
+	if (bIsTop && bIsLeft) HoveredTileQuadrant = EInv_TileQuadrant::TopLeft;
+	else if (bIsTop && !bIsLeft) HoveredTileQuadrant = EInv_TileQuadrant::TopRight;
+	else if (!bIsTop && bIsLeft) HoveredTileQuadrant = EInv_TileQuadrant::BottomLeft;
+	else if (!bIsTop && !bIsLeft) HoveredTileQuadrant = EInv_TileQuadrant::BottomRight;
+
+	return HoveredTileQuadrant;
 }
 
 FInv_SlotAvailabilityResult UInv_InventoryGridWidget::HasRoomForItem(const UInv_ItemComponent* ItemComponent)
@@ -420,33 +559,76 @@ void UInv_InventoryGridWidget::SetSlottedItemImage(const UInv_SlottedItemWidget*
 	SlottedItem->SetImageBrush(Brush);
 }
 
-void UInv_InventoryGridWidget::ConstructGrid()
-{
-	// 提前分配内存
-	GridSlots.Reserve(Rows * Columns);
-	
-	for (int32 i = 0; i < Rows; ++i)
-	{
-		for (int32 j = 0; j < Columns; ++j)
-		{
-			UInv_GridSlotWidget* GridSlot = CreateWidget<UInv_GridSlotWidget>(this, GridSlotClass);
-			CanvasPanel->AddChild(GridSlot);
-
-			const FIntPoint TilePosition = FIntPoint(j, i);
-			GridSlot->SetTileIndex(UInv_WidgetUtils::GetIndexFromPosition(TilePosition, Columns));
-
-			UCanvasPanelSlot* GridCPS = UWidgetLayoutLibrary::SlotAsCanvasSlot(GridSlot);
-			GridCPS->SetSize(FVector2D(TileSize));
-			GridCPS->SetPosition(TilePosition * TileSize);
-
-			GridSlots.Add(GridSlot);
-		}
-	}
-}
-
 bool UInv_InventoryGridWidget::MatchesCategory(const UInv_InventoryItem* Item) const
 {
 	return Item->GetItemManifest().GetItemCategory() == ItemCategory;
 }
 
+bool UInv_InventoryGridWidget::CursorExitedCanvas(const FVector2D& BoundaryPos, const FVector2D& BoundarySize,
+	const FVector2D& Location)
+{
+	bLastMouseWithinCanvas = bMouseWithinCanvas;
+	bMouseWithinCanvas = UInv_WidgetUtils::IsWithinBounds(BoundaryPos, BoundarySize, Location);
+	if (!bMouseWithinCanvas && bLastMouseWithinCanvas)
+	{
+		UnHighlightSlots(LastHighlightedIndex, LastHighlightedDimensions);
+		return true;
+	}
+	return false;
+}
+
+void UInv_InventoryGridWidget::HighlightSlots(const int32 Index, const FIntPoint& Dimensions)
+{
+	if (!bMouseWithinCanvas) return;
+
+	UnHighlightSlots(LastHighlightedIndex, LastHighlightedDimensions);
+	UInv_InventoryStatics::ForEach2D(GridSlots, Index, Dimensions, Columns, [](UInv_GridSlotWidget* GridSlot)
+	{
+		GridSlot->SetOccupiedTexture();
+	});
+	LastHighlightedDimensions = Dimensions;
+	LastHighlightedIndex = Index;
+}
+
+void UInv_InventoryGridWidget::UnHighlightSlots(const int32 Index, const FIntPoint& Dimensions)
+{
+	UInv_InventoryStatics::ForEach2D(GridSlots, Index, Dimensions, Columns, [](UInv_GridSlotWidget* GridSlot)
+	{
+		if (GridSlot->IsAvailable())
+		{
+			GridSlot->SetUnoccupiedTexture();
+		}
+		else
+		{
+			GridSlot->SetOccupiedTexture();
+		}
+	});
+}
+
+void UInv_InventoryGridWidget::ChangeHoverType(const int32 Index, const FIntPoint& Dimensions,
+	EInv_GridSlotState GridSlotState)
+{
+	UnHighlightSlots(LastHighlightedIndex, LastHighlightedDimensions);
+	UInv_InventoryStatics::ForEach2D(GridSlots, Index, Dimensions, Columns, [State = GridSlotState](UInv_GridSlotWidget* GridSlot)
+	{
+		switch (State)
+		{
+		case EInv_GridSlotState::Occupied:
+			GridSlot->SetOccupiedTexture();
+			break;
+		case EInv_GridSlotState::Unoccupied:
+			GridSlot->SetUnoccupiedTexture();
+			break;
+		case EInv_GridSlotState::GrayedOut:
+			GridSlot->SetGrayedOutTexture();
+			break;
+		case EInv_GridSlotState::Selected:
+			GridSlot->SetSelectedTexture();
+			break;
+		}
+	});
+
+	LastHighlightedIndex = Index;
+	LastHighlightedDimensions = Dimensions;
+}
 

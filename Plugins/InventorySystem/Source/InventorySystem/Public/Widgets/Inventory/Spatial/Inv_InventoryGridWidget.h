@@ -7,6 +7,7 @@
 #include "Types/Inv_GridTypes.h"
 #include "Inv_InventoryGridWidget.generated.h"
 
+enum EInv_GridSlotState : uint8;
 class UInv_HoverItemWidget;
 struct FGameplayTag;
 struct FInv_ImageFragment;
@@ -82,6 +83,14 @@ private:
 	void RemoveItemFromGrid(UInv_InventoryItem* InventoryItem, const int32 GridIndex);
 	void UpdateTileParameters(const FVector2D& CanvasPosition, const FVector2D& MousePosition);
 	FIntPoint CalculateHoveredCoordinates(const FVector2D& CanvasPosition, const FVector2D& MousePosition) const;
+	EInv_TileQuadrant CalculateTileQuadrant(const FVector2D& CanvasPosition, const FVector2D& MousePosition) const;
+	void OnTileParametersUpdated(const FInv_TileParameters& Parameters);
+	FIntPoint CalculateStartingCoordinate(const FIntPoint& Coordinate, const FIntPoint& Dimensions, const EInv_TileQuadrant Quadrant) const;
+	FInv_SpaceQueryResult CheckHoverPosition(const FIntPoint& Position, const FIntPoint& Dimensions);
+	bool CursorExitedCanvas(const FVector2D& BoundaryPos, const FVector2D& BoundarySize, const FVector2D& Location);
+	void HighlightSlots(const int32 Index, const FIntPoint& Dimensions);
+	void UnHighlightSlots(const int32 Index, const FIntPoint& Dimensions);
+	void ChangeHoverType(const int32 Index, const FIntPoint& Dimensions, EInv_GridSlotState GridSlotState);
 
 	UFUNCTION()
 	void AddStacks(const FInv_SlotAvailabilityResult& Result);
@@ -134,4 +143,15 @@ private:
 
 	FInv_TileParameters TileParameters;
 	FInv_TileParameters LastTileParameters;
+
+	// 如果在有效位置点击网格，项目将被放置的索引
+	int32 ItemDropIndex{INDEX_NONE};
+	FInv_SpaceQueryResult CurrentQueryResult;
+
+	// 光标是否在画布画版中
+	bool bMouseWithinCanvas;
+	bool bLastMouseWithinCanvas;
+
+	int32 LastHighlightedIndex;
+	FIntPoint LastHighlightedDimensions;
 };

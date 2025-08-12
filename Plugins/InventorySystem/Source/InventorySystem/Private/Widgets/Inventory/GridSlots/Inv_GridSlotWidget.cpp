@@ -4,6 +4,7 @@
 #include "Widgets/Inventory/GridSlots/Inv_GridSlotWidget.h"
 
 #include "Components/Image.h"
+#include "Items/Inv_InventoryItem.h"
 
 void UInv_GridSlotWidget::SetInventoryItem(UInv_InventoryItem* Item)
 {

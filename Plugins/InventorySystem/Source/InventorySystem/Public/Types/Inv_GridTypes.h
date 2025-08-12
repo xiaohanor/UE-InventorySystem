@@ -76,7 +76,7 @@ enum class EInv_TileQuadrant : uint8
 
 
 /**
- * 图块参数
+ * 包含图块坐标、索引和象限
  */
 USTRUCT(BlueprintType)
 struct FInv_TileParameters
@@ -97,3 +97,21 @@ inline bool operator==(const FInv_TileParameters& A, const FInv_TileParameters& 
 {
 	return A.TileCoordinates == B.TileCoordinates && A.TileIndex == B.TileIndex && A.TileQuadrant == B.TileQuadrant;
 }
+
+/**
+ * 空间查询结果
+ */
+USTRUCT()
+struct FInv_SpaceQueryResult
+{
+	GENERATED_BODY()
+	
+	// 如果查询的空间中没有物品则为True
+	bool bHasSpace{false};
+
+	// 如果只有一个可交换的项，则有效
+	TWeakObjectPtr<UInv_InventoryItem> ValidItem = nullptr;
+
+	// 有效项的左上角索引（如果有）
+	int32 UpperLeftIndex{INDEX_NONE};
+};

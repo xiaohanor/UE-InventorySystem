@@ -55,4 +55,5 @@ private:
 	
 	void DisableButton(UButton* Button);
 	void SetActiveGrid(UInv_InventoryGridWidget* Grid, UButton* Button);
+	TWeakObjectPtr<UInv_InventoryGridWidget> ActiveGrid;
 };

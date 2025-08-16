@@ -32,6 +32,8 @@ public:
 	
 	EInv_ItemCategory GetItemCategory() const { return ItemCategory; }
 	FInv_SlotAvailabilityResult HasRoomForItem(const UInv_ItemComponent* ItemComponent);
+	void ShowCursor();
+	void HideCursor();
 
 	UFUNCTION()
 	void AddItem(UInv_InventoryItem* Item);
@@ -91,12 +93,37 @@ private:
 	void HighlightSlots(const int32 Index, const FIntPoint& Dimensions);
 	void UnHighlightSlots(const int32 Index, const FIntPoint& Dimensions);
 	void ChangeHoverType(const int32 Index, const FIntPoint& Dimensions, EInv_GridSlotState GridSlotState);
+	void PutDownOnIndex(const int32 Index);
+	void ClearHoverItem();
+	UUserWidget* GetVisibleCursorWidget();
+	UUserWidget* GetHiddenCursorWidget();
+
+	UPROPERTY(EditDefaultsOnly, Category = "Inventory")
+	TSubclassOf<UUserWidget> VisibleCursorWidgetClass;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Inventory")
+	TSubclassOf<UUserWidget> HiddenCursorWidgetClass;
+
+	UPROPERTY()
+	TObjectPtr<UUserWidget> VisibleCursorWidget;
+
+	UPROPERTY()
+	TObjectPtr<UUserWidget> HiddenCursorWidget;
 
 	UFUNCTION()
 	void AddStacks(const FInv_SlotAvailabilityResult& Result);
 
 	UFUNCTION()
 	void OnSlottedItemClicked(int32 GridIndex, const FPointerEvent& MouseEvent);
+	
+	UFUNCTION()
+	void OnGridSlotClicked(int32 GridIndex, const FPointerEvent& MouseEvent);
+
+	UFUNCTION()
+	void OnGridSlotHovered(int32 GridIndex, const FPointerEvent& MouseEvent);
+
+	UFUNCTION()
+	void OnGridSlotUnhovered(int32 GridIndex, const FPointerEvent& MouseEvent);
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"),  Category = "Inventory")
 	EInv_ItemCategory ItemCategory;
@@ -109,12 +136,12 @@ private:
 	UPROPERTY()
 	TArray<TObjectPtr<UInv_GridSlotWidget>> GridSlots;
 
-	UPROPERTY(EditAnywhere, Category = "Inventory")
+	UPROPERTY(EditDefaultsOnly, Category = "Inventory")
 	TSubclassOf<UInv_GridSlotWidget> GridSlotClass;
 	/* 网格插槽 */
 
 	/* 插槽内物品控件 */
-	UPROPERTY(EditAnywhere, Category = "Inventory")
+	UPROPERTY(EditDefaultsOnly, Category = "Inventory")
 	TSubclassOf<UInv_SlottedItemWidget> SlottedItemClass;
 
 	UPROPERTY()
@@ -122,7 +149,7 @@ private:
 	/* 插槽内物品控件 */
 
 	/* 物品悬停控件 */
-	UPROPERTY(EditAnywhere, Category = "Inventory")
+	UPROPERTY(EditDefaultsOnly, Category = "Inventory")
 	TSubclassOf<UInv_HoverItemWidget> HoverItemClass;
 
 	UPROPERTY()
@@ -148,7 +175,7 @@ private:
 	int32 ItemDropIndex{INDEX_NONE};
 	FInv_SpaceQueryResult CurrentQueryResult;
 
-	// 光标是否在画布画版中
+	// 光标是否在画布画板中
 	bool bMouseWithinCanvas;
 	bool bLastMouseWithinCanvas;
 

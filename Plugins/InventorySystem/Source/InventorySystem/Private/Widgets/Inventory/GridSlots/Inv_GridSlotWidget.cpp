@@ -6,6 +6,24 @@
 #include "Components/Image.h"
 #include "Items/Inv_InventoryItem.h"
 
+void UInv_GridSlotWidget::NativeOnMouseEnter(const FGeometry& MyGeometry, const FPointerEvent& MouseEvent)
+{
+	Super::NativeOnMouseEnter(MyGeometry, MouseEvent);
+	GridSlotHovered.Broadcast(TileIndex,  MouseEvent);
+}
+
+void UInv_GridSlotWidget::NativeOnMouseLeave(const FPointerEvent& MouseEvent)
+{
+	Super::NativeOnMouseLeave(MouseEvent);
+	GridSlotUnhovered.Broadcast(TileIndex, MouseEvent);
+}
+
+FReply UInv_GridSlotWidget::NativeOnMouseButtonDown(const FGeometry& MyGeometry, const FPointerEvent& MouseEvent)
+{
+	GridSlotClicked.Broadcast(TileIndex, MouseEvent);
+	return FReply::Handled();
+}
+
 void UInv_GridSlotWidget::SetInventoryItem(UInv_InventoryItem* Item)
 {
 	InventoryItem = Item;

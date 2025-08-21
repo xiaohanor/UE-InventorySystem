@@ -21,6 +21,6 @@ void UInv_InventoryItem::SetItemManifest(const FInv_ItemManifest& Manifest)
 
 bool UInv_InventoryItem::IsStackable() const
 {
-	const FInv_StackableFragment* StackableFragment = GetItemManifest().GetTypeOfFragment<FInv_StackableFragment>();
+	const FInv_StackableFragment* StackableFragment = GetItemManifest().GetFragmentOfType<FInv_StackableFragment>();
 	return StackableFragment != nullptr;
 }

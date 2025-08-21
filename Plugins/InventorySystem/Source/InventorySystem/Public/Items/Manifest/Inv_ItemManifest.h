@@ -30,7 +30,7 @@ struct INVENTORYSYSTEM_API FInv_ItemManifest
 
 	template<typename T>
 	requires std::derived_from<T, FInv_ItemFragment>
-	const T* GetTypeOfFragment() const;
+	const T* GetFragmentOfType() const;
 
 	template<typename T>
 	requires std::derived_from<T, FInv_ItemFragment>
@@ -67,7 +67,7 @@ template<typename T>
 
 template<typename T>
 	requires std::derived_from<T, FInv_ItemFragment>
-	const T* FInv_ItemManifest::GetTypeOfFragment() const
+	const T* FInv_ItemManifest::GetFragmentOfType() const
 {
 	for (const TInstancedStruct<FInv_ItemFragment>& Fragment : Fragments)
 	{

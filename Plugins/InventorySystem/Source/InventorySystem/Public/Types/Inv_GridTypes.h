@@ -62,7 +62,7 @@ struct FInv_SlotAvailabilityResult
 
 
 /**
- * 图块象限
+ * 图块象限，用于判断光标在一个格子内的位置
  */
 UENUM(BlueprintType)
 enum class EInv_TileQuadrant : uint8

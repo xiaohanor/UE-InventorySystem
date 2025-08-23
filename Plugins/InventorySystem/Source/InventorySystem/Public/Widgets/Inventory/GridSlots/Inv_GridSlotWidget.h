@@ -6,6 +6,7 @@
 #include "Blueprint/UserWidget.h"
 #include "Inv_GridSlotWidget.generated.h"
 
+class UInv_ItemPopUpWidget;
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FGridSlotEvent, int32, GridIndex, const FPointerEvent&, MouseEvent);
 
 class UInv_InventoryItem;
@@ -32,6 +33,8 @@ public:
 	virtual void NativeOnMouseEnter(const FGeometry& MyGeometry, const FPointerEvent& MouseEvent) override;
 	virtual void NativeOnMouseLeave(const FPointerEvent& MouseEvent) override;
 	virtual FReply NativeOnMouseButtonDown(const FGeometry& MyGeometry, const FPointerEvent& MouseEvent) override;
+	void SetItemPopUp(UInv_ItemPopUpWidget* PopUp);
+	UInv_ItemPopUpWidget* GetItemPopUp() const;
 	
 	void SetTileIndex(const int32 Index) { TileIndex = Index; }
 	int32 GetTileIndex() const { return TileIndex; }
@@ -58,11 +61,12 @@ public:
 
 private:
 	int32 TileIndex;
-	int32 StackCount;
+	int32 StackCount{0};
 	int32 UpperLeftIndex{INDEX_NONE};
-	TWeakObjectPtr<UInv_InventoryItem> InventoryItem;
 	bool bAvailable{true};
-
+	TWeakObjectPtr<UInv_InventoryItem> InventoryItem;
+	TWeakObjectPtr<UInv_ItemPopUpWidget> ItemPopUp;
+	
 	UPROPERTY(meta = (BindWidget))
 	TObjectPtr<UImage> Image_GridSlot;
 
@@ -79,4 +83,7 @@ private:
 	FSlateBrush Brush_GrayedOut;
 
 	EInv_GridSlotState GridSlotState;
+
+	UFUNCTION()
+	void OnItemPopUpDestruct(UUserWidget* Menu);
 };

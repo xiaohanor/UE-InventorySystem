@@ -6,11 +6,12 @@
 #include "Widgets/Inventory/InventoryBase/Inv_InventoryBaseWidget.h"
 #include "Inv_SpatialInventoryWidget.generated.h"
 
+class UCanvasPanel;
 class UButton;
 class UWidgetSwitcher;
 class UInv_InventoryGridWidget;
 /**
- * 
+ * 库存的主页面，包含不同类型物品储存空间（UInv_InventoryGridWidget）
  */
 UCLASS()
 class INVENTORYSYSTEM_API UInv_SpatialInventoryWidget : public UInv_InventoryBaseWidget
@@ -23,6 +24,9 @@ public:
 	virtual FInv_SlotAvailabilityResult HasRoomForItem(UInv_ItemComponent* ItemComponent) const override; 
 	
 private:
+	UPROPERTY(meta = (BindWidget))
+	TObjectPtr<UCanvasPanel> CanvasPanel;
+	
 	UPROPERTY(meta = (BindWidget))
 	TObjectPtr<UWidgetSwitcher> Switcher;
 

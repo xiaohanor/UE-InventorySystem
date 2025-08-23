@@ -11,9 +11,6 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FGridSlotEvent, int32, GridIndex, c
 
 class UInv_InventoryItem;
 class UImage;
-/**
- * 
- */
 
 UENUM()
 enum EInv_GridSlotState : uint8
@@ -24,6 +21,9 @@ enum EInv_GridSlotState : uint8
 	GrayedOut	// 灰色
 };
 
+/**
+ * 
+ */
 UCLASS()
 class INVENTORYSYSTEM_API UInv_GridSlotWidget : public UUserWidget
 {

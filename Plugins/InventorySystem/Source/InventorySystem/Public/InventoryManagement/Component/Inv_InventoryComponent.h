@@ -34,6 +34,9 @@ public:
 	UFUNCTION(Server, Reliable)
 	void Server_DropItem(UInv_InventoryItem* Item, int32 StackCount);
 
+	UFUNCTION(Server, Reliable)
+	void Server_ConsumeItem(UInv_InventoryItem* Item);
+
 	void ToggleInventoryMenu();
 	// 将物品作为子对象进行网络同步
 	void AddRepSubObj(UObject* SubObj);

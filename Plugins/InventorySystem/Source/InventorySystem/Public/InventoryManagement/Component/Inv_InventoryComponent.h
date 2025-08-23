@@ -31,9 +31,13 @@ public:
 	UFUNCTION(Server, Reliable)
 	void Server_AddStacksToItem(UInv_ItemComponent* ItemComponent, int32 StackCount, int32 Remainder);
 
+	UFUNCTION(Server, Reliable)
+	void Server_DropItem(UInv_InventoryItem* Item, int32 StackCount);
+
 	void ToggleInventoryMenu();
 	// 将物品作为子对象进行网络同步
 	void AddRepSubObj(UObject* SubObj);
+	void SpawnDroppedItem(UInv_InventoryItem* Item, int32 StackCount);
 
 	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly, Category="Inventory")
 	void TryAddItem(UInv_ItemComponent* ItemComponent);
@@ -63,6 +67,23 @@ private:
 	bool bInventoryMenuOpen{false};
 	void OpenInventoryMenu();
 	void CloseInventoryMenu();
-	
+
+	/* Actor Spawn 参数 */
+	UPROPERTY(EditAnywhere, Category = "Inventory")
+	float DropSpawnAngleMin = -85.f;
+
+	UPROPERTY(EditAnywhere, Category = "Inventory")
+	float DropSpawnAngleMax = 85.f;
+
+	UPROPERTY(EditAnywhere, Category = "Inventory")
+	float DropSpawnDistanceMin = 10.f;
+
+	UPROPERTY(EditAnywhere, Category = "Inventory")
+	float DropSpawnDistanceMax = 50.f;
+
+	UPROPERTY(EditAnywhere, Category = "Inventory")
+	float RelativeSpawnElevation = 70.f;
+	/* Actor Spawn 参数 */
+
 };
 

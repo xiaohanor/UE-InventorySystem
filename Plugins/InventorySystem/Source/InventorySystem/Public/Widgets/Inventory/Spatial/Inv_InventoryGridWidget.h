@@ -36,6 +36,7 @@ public:
 	void ShowCursor();
 	void HideCursor();
 	void SetOwningCanvas(UCanvasPanel* OwningCanvas);
+	void DropItem();
 
 	UFUNCTION()
 	void AddItem(UInv_InventoryItem* Item);

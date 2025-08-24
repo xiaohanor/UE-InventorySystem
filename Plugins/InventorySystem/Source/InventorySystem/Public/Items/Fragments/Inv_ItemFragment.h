@@ -25,6 +25,21 @@ private:
 	FGameplayTag FragmentTag = FGameplayTag::EmptyTag;
 };
 
+/*
+ * 用于集成到控件中的片段.
+ */
+class UInv_CompositeBase;
+USTRUCT(BlueprintType)
+struct FInv_InventoryItemFragment : public FInv_ItemFragment
+{
+	GENERATED_BODY()
+
+	virtual void Assimilate(UInv_CompositeBase* Composite) const;
+	
+protected:
+	bool MatchesWidgetTag(const UInv_CompositeBase* Composite) const;
+};
+
 USTRUCT(BlueprintType)
 struct FInv_GridFragment : public FInv_ItemFragment
 {
@@ -46,11 +61,12 @@ private:
 };
 
 USTRUCT(BlueprintType)
-struct FInv_ImageFragment : public FInv_ItemFragment
+struct FInv_ImageFragment : public FInv_InventoryItemFragment
 {
 	GENERATED_BODY()
 
 	UTexture2D* GetIcon() const { return Icon; }
+	virtual void Assimilate(UInv_CompositeBase* Composite) const override;
 
 private:
 	// 图标纹理
@@ -60,6 +76,20 @@ private:
 	// 图标尺寸
 	UPROPERTY(EditAnywhere, Category = "Inventory")
 	FVector2D IconDimensions{44.f, 44.f};
+};
+
+USTRUCT(BlueprintType)
+struct FInv_TextFragment : public FInv_InventoryItemFragment
+{
+	GENERATED_BODY()
+
+	FText GetText() const { return FragmentText; }
+	void SetText(const FText& Text) { FragmentText = Text; }
+	virtual void Assimilate(UInv_CompositeBase* Composite) const override;
+
+private:
+	UPROPERTY(EditAnywhere, Category = "Inventory")
+	FText FragmentText;
 };
 
 USTRUCT(BlueprintType)
@@ -109,18 +139,4 @@ struct FInv_ManaPotionFragment : public FInv_ConsumableFragment
 	float ManaAmount = 20.f;
 
 	virtual void OnConsume(APlayerController* PC) override;
-};
-
-/*
- * 用于集成到控件中的片段.
- */
-class UInv_CompositeBase;
-USTRUCT(BlueprintType)
-struct FInv_InventoryItemFragment : public FInv_ItemFragment
-{
-	GENERATED_BODY()
-
-	virtual void Assimilate(UInv_CompositeBase* Composite) const;
-protected:
-	bool MatchesWidgetTag(const UInv_CompositeBase* Composite) const;
 };

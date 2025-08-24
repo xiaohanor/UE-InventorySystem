@@ -7,7 +7,7 @@
 #include "Inv_Leaf.generated.h"
 
 /**
- * 
+ * 叶子节点：不包含子元素，仅代表一个最小的展示或行为单元
  */
 UCLASS()
 class INVENTORYSYSTEM_API UInv_Leaf : public UInv_CompositeBase

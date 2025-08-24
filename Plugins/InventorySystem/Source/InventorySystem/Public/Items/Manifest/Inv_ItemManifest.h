@@ -53,7 +53,7 @@ private:
 	UPROPERTY(EditAnywhere, Category = "Inventory")
 	EInv_ItemCategory ItemCategory{EInv_ItemCategory::None};
 
-	UPROPERTY(EditAnywhere, meta = (Categories = "GameItems"),Category = "Inventory")
+	UPROPERTY(EditAnywhere, Category = "Inventory", meta = (Categories = "GameItems"))
 	FGameplayTag ItemType;
 
 	UPROPERTY(EditAnywhere, Category = "Inventory")
@@ -113,7 +113,7 @@ template <typename T>
 	TArray<const T*> Result;
 	for (const TInstancedStruct<FInv_ItemFragment>& Fragment : Fragments)
 	{
-		if (T* FragmentPtr = Fragment.GetMutablePtr<T>())
+		if (const T* FragmentPtr = Fragment.GetPtr<T>())
 		{
 			Result.Add(FragmentPtr);
 		}

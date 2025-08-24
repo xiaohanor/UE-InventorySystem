@@ -7,7 +7,7 @@
 #include "Inv_Composite.generated.h"
 
 /**
- * 
+ * 组合节点：持有多个子控件，承担聚合与递归操作（组合模式）
  */
 UCLASS()
 class INVENTORYSYSTEM_API UInv_Composite : public UInv_CompositeBase

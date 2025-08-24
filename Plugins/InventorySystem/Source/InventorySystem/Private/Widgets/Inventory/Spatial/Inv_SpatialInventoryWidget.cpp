@@ -10,6 +10,7 @@
 #include "Components/CanvasPanelSlot.h"
 #include "Components/WidgetSwitcher.h"
 #include "InventoryManagement/Inv_InventoryStatics.h"
+#include "Items/Inv_InventoryItem.h"
 #include "Widgets/Inventory/Spatial/Inv_InventoryGridWidget.h"
 #include "Widgets/ItemDescription/Inv_ItemDescription.h"
 
@@ -63,13 +64,15 @@ FInv_SlotAvailabilityResult UInv_SpatialInventoryWidget::HasRoomForItem(UInv_Ite
 void UInv_SpatialInventoryWidget::OnItemHovered(UInv_InventoryItem* Item)
 {
 	// 延迟显示描述UI
+	const auto& Manifest = Item->GetItemManifest();
 	GetItemDescription()->SetVisibility(ESlateVisibility::Collapsed);
 
 	GetOwningPlayer()->GetWorldTimerManager().ClearTimer(DescriptionTimer);
 	
 	FTimerDelegate TimerDelegate;
-	TimerDelegate.BindLambda([this]()
+	TimerDelegate.BindLambda([this, &Manifest]()
 	{
+		Manifest.AssimilateInventoryFragments(GetItemDescription());
 		GetItemDescription()->SetVisibility(ESlateVisibility::HitTestInvisible);
 	});
 

@@ -41,6 +41,7 @@ public:
 	// 将物品作为子对象进行网络同步
 	void AddRepSubObj(UObject* SubObj);
 	void SpawnDroppedItem(UInv_InventoryItem* Item, int32 StackCount);
+	UInv_InventoryBaseWidget* GetInventoryMenu() const { return InventoryMenuWidget; }
 
 	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly, Category="Inventory")
 	void TryAddItem(UInv_ItemComponent* ItemComponent);

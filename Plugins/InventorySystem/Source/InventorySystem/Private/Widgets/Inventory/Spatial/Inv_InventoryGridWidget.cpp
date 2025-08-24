@@ -589,6 +589,8 @@ bool UInv_InventoryGridWidget::IsLeftClick(const FPointerEvent& MouseEvent) cons
 
 void UInv_InventoryGridWidget::OnSlottedItemClicked(int32 GridIndex, const FPointerEvent& MouseEvent)
 {
+	UInv_InventoryStatics::ItemUnhovered(GetOwningPlayer());
+	
 	check(GridSlots.IsValidIndex(GridIndex));
 	UInv_InventoryItem* ClickedInventoryItem  = GridSlots[GridIndex]->GetInventoryItem().Get();
 
@@ -672,6 +674,11 @@ void UInv_InventoryGridWidget::CreateItemPopUp(const int32 GridIndex)
 	{
 		ItemPopUp->CollapseConsumeButton();
 	}
+}
+
+bool UInv_InventoryGridWidget::HasHoverItem() const
+{
+	return IsValid(HoverItem);
 }
 
 void UInv_InventoryGridWidget::DropItem()

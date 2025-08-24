@@ -37,3 +37,31 @@ bool UInv_WidgetUtils::IsWithinBounds(const FVector2D& BoundaryPos, const FVecto
 	return MousePos.X >= BoundaryPos.X && MousePos.X <= (BoundaryPos.X + WidgetSize.X) &&
 		MousePos.Y >= BoundaryPos.Y && MousePos.Y <= (BoundaryPos.Y + WidgetSize.Y);
 }
+
+FVector2D UInv_WidgetUtils::GetClampedWidgetPosition(const FVector2D& Boundary, const FVector2D& WidgetSize,
+	const FVector2D& MousePos)
+{
+	FVector2D ClampedPosition = MousePos;
+
+	// 确保水平方向不超出边界
+	if (MousePos.X + WidgetSize.X > Boundary.X)
+	{
+		ClampedPosition.X = Boundary.X - WidgetSize.X;
+	}
+	if (MousePos.X < 0.f)
+	{
+		ClampedPosition.X = 0.f;
+	}
+
+	// 确保垂直方向不超出边界
+	if (MousePos.Y + WidgetSize.Y > Boundary.Y)
+	{
+		ClampedPosition.Y = Boundary.Y - WidgetSize.Y;
+	}
+	if (MousePos.Y < 0.f)
+	{
+		ClampedPosition.Y = 0.f;
+	}
+
+	return ClampedPosition;
+}

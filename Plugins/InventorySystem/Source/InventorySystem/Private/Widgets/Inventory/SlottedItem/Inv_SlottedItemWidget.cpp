@@ -5,12 +5,23 @@
 
 #include "Components/Image.h"
 #include "Components/TextBlock.h"
+#include "InventoryManagement/Inv_InventoryStatics.h"
 #include "Items/Inv_InventoryItem.h"
 
 FReply UInv_SlottedItemWidget::NativeOnMouseButtonDown(const FGeometry& MyGeometry, const FPointerEvent& MouseEvent)
 {
 	OnSlottedItemClicked.Broadcast(GridIndex, MouseEvent);
 	return FReply::Handled();
+}
+
+void UInv_SlottedItemWidget::NativeOnMouseEnter(const FGeometry& MyGeometry, const FPointerEvent& MouseEvent)
+{
+	UInv_InventoryStatics::ItemHovered(GetOwningPlayer(), InventoryItem.Get());
+}
+
+void UInv_SlottedItemWidget::NativeOnMouseLeave(const FPointerEvent& MouseEvent)
+{
+	UInv_InventoryStatics::ItemUnhovered(GetOwningPlayer());
 }
 
 void UInv_SlottedItemWidget::SetInventoryItem(UInv_InventoryItem* Item)

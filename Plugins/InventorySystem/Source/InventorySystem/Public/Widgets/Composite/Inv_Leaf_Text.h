@@ -17,9 +17,12 @@ class INVENTORYSYSTEM_API UInv_Leaf_Text : public UInv_Leaf
 
 public:
 	void SetText(const FText& Text) const;
+	virtual void NativePreConstruct() override;
 
 private:
 	UPROPERTY(meta = (BindWidget))
 	TObjectPtr<UTextBlock> Text_LeafText;
 
+	UPROPERTY(EditAnywhere, Category = "Inventory")
+	int32 FontSize_Text{12};
 };

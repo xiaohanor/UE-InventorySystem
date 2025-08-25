@@ -9,3 +9,12 @@ void UInv_Leaf_Text::SetText(const FText& Text) const
 {
 	Text_LeafText->SetText(Text);
 }
+
+void UInv_Leaf_Text::NativePreConstruct()
+{
+	Super::NativePreConstruct();
+
+	FSlateFontInfo FontInfo = Text_LeafText->GetFont();
+	FontInfo.Size = FontSize_Text;
+	Text_LeafText->SetFont(FontInfo);
+}

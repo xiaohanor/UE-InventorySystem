@@ -681,6 +681,11 @@ bool UInv_InventoryGridWidget::HasHoverItem() const
 	return IsValid(HoverItem);
 }
 
+UInv_HoverItemWidget* UInv_InventoryGridWidget::GetHoverItem() const
+{
+	return HoverItem;
+}
+
 void UInv_InventoryGridWidget::DropItem()
 {
 	if (!IsValid(HoverItem)) return;

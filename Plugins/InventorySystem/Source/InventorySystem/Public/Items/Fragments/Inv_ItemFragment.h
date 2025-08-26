@@ -155,7 +155,7 @@ private:
 //////////////////// 可消费的物品片段 //////////////////
 
 USTRUCT(BlueprintType)
-struct FInv_ConsumeModifier : public FInv_LabeledNumberFragment
+struct FInv_ConsumableFragment : public FInv_InventoryItemFragment
 {
 	GENERATED_BODY()
 	
@@ -165,7 +165,15 @@ struct FInv_ConsumeModifier : public FInv_LabeledNumberFragment
 
 private:
 	UPROPERTY(EditAnywhere, Category = "Inventory", meta = (ExcludeBaseStruct))
-	TArray<TInstancedStruct<FInv_ConsumeModifier>> ConsumeModifiers;
+	TArray<TInstancedStruct<FInv_ConsumableFragment>> ConsumeModifiers;
+};
+
+USTRUCT(BlueprintType)
+struct FInv_ConsumeModifier : public FInv_LabeledNumberFragment
+{
+	GENERATED_BODY()
+
+	virtual void OnConsume(APlayerController* PC) {}
 };
 
 USTRUCT(BlueprintType)

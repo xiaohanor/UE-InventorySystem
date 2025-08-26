@@ -5,7 +5,7 @@
 #include "Widgets/Composite/Inv_Leaf_LabeledValue.h"
 #include "Widgets/Composite/Inv_Leaf_Text.h"
 
-void FInv_ConsumeModifier::OnConsume(APlayerController* PC)
+void FInv_ConsumableFragment::OnConsume(APlayerController* PC)
 {
 	for (auto& Modifier : ConsumeModifiers)
 	{
@@ -14,9 +14,9 @@ void FInv_ConsumeModifier::OnConsume(APlayerController* PC)
 	}
 }
 
-void FInv_ConsumeModifier::Assimilate(UInv_CompositeBase* Composite) const
+void FInv_ConsumableFragment::Assimilate(UInv_CompositeBase* Composite) const
 {
-	FInv_LabeledNumberFragment::Assimilate(Composite);
+	FInv_InventoryItemFragment::Assimilate(Composite);
 	for (const auto& Modifier : ConsumeModifiers)
 	{
 		const auto& ModRef = Modifier.Get();
@@ -24,9 +24,9 @@ void FInv_ConsumeModifier::Assimilate(UInv_CompositeBase* Composite) const
 	}
 }
 
-void FInv_ConsumeModifier::Manifest()
+void FInv_ConsumableFragment::Manifest()
 {
-	FInv_LabeledNumberFragment::Manifest();
+	FInv_InventoryItemFragment::Manifest();
 	for (auto& Modifier : ConsumeModifiers)
 	{
 		auto& ModRef = Modifier.GetMutable();

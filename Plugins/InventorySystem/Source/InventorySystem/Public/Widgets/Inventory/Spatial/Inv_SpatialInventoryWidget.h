@@ -6,6 +6,8 @@
 #include "Widgets/Inventory/InventoryBase/Inv_InventoryBaseWidget.h"
 #include "Inv_SpatialInventoryWidget.generated.h"
 
+struct FGameplayTag;
+class UInv_EquippedGridSlotWidget;
 class UInv_ItemDescription;
 class UCanvasPanel;
 class UButton;
@@ -28,9 +30,13 @@ public:
 	virtual void OnItemHovered(UInv_InventoryItem* Item) override;
 	virtual void OnItemUnHovered() override;
 	virtual bool HasHoverItem() const override;
+	virtual UInv_HoverItemWidget* GetHoverItem() const override;
 	
 private:
 	TWeakObjectPtr<UInv_InventoryGridWidget> ActiveGrid;
+
+	UPROPERTY()
+	TArray<TObjectPtr<UInv_EquippedGridSlotWidget>> EquippedGridSlots;
 
 	UPROPERTY(meta = (BindWidget))
 	TObjectPtr<UCanvasPanel> CanvasPanel;
@@ -77,6 +83,9 @@ private:
 
 	UFUNCTION()
 	void ShowCraftables();
+
+	UFUNCTION()
+	void EquippedGridSlotClicked(UInv_EquippedGridSlotWidget* EquippedGridSlot, const FGameplayTag& EquipmentTypeTag);
 	
 	void DisableButton(UButton* Button);
 	void SetActiveGrid(UInv_InventoryGridWidget* Grid, UButton* Button);

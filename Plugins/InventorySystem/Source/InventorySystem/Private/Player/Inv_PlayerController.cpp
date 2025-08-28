@@ -102,10 +102,10 @@ void AInv_PlayerController::ItemTrace()
 		if (UActorComponent* HighLightable = ThisActor->FindComponentByInterface(UInv_Highlightable::StaticClass()); IsValid(HighLightable))
 		{
 			IInv_Highlightable::Execute_Highlight(HighLightable);
-			const UInv_ItemComponent* ItemComponent = ThisActor->FindComponentByClass<UInv_ItemComponent>();
-			if (!IsValid(ItemComponent)) return;
-			if (IsValid(HUDWidget)) HUDWidget->ShowPickupMessage(ItemComponent->GetPickupMessage());
 		}
+		const UInv_ItemComponent* ItemComponent = ThisActor->FindComponentByClass<UInv_ItemComponent>();
+		if (!IsValid(ItemComponent)) return;
+		if (IsValid(HUDWidget)) HUDWidget->ShowPickupMessage(ItemComponent->GetPickupMessage());
 	}
 
 	if (LastActor.IsValid())

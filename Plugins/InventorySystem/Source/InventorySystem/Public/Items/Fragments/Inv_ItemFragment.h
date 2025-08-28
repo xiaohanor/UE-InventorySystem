@@ -6,6 +6,8 @@
 
 #include "Inv_ItemFragment.generated.h"
 
+struct FInv_ConsumeModifier;
+
 USTRUCT(BlueprintType)
 struct FInv_ItemFragment
 {
@@ -165,7 +167,7 @@ struct FInv_ConsumableFragment : public FInv_InventoryItemFragment
 
 private:
 	UPROPERTY(EditAnywhere, Category = "Inventory", meta = (ExcludeBaseStruct))
-	TArray<TInstancedStruct<FInv_ConsumableFragment>> ConsumeModifiers;
+	TArray<TInstancedStruct<FInv_ConsumeModifier>> ConsumeModifiers;
 };
 
 USTRUCT(BlueprintType)

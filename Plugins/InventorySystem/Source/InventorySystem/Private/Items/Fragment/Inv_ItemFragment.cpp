@@ -34,16 +34,6 @@ void FInv_ConsumableFragment::Manifest()
 	}
 }
 
-void FInv_HealthPotionFragment::OnConsume(APlayerController* PC)
-{
-	GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Green, FString::Printf(TEXT("Health Potion consumed! Healing by: %f"), GetValue()));
-}
-
-void FInv_ManaPotionFragment::OnConsume(APlayerController* PC)
-{
-	GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Blue, FString::Printf(TEXT("Mana Potion consumed! Mana replenished by: %f"), GetValue()));
-}
-
 void FInv_InventoryItemFragment::Assimilate(UInv_CompositeBase* Composite) const
 {
 	if (!MatchesWidgetTag(Composite)) return;
@@ -58,6 +48,7 @@ bool FInv_InventoryItemFragment::MatchesWidgetTag(const UInv_CompositeBase* Comp
 void FInv_ImageFragment::Assimilate(UInv_CompositeBase* Composite) const
 {
 	FInv_InventoryItemFragment::Assimilate(Composite);
+	if (!MatchesWidgetTag(Composite)) return;
 	
 	UInv_Leaf_Image* Image = Cast<UInv_Leaf_Image>(Composite);
 	if (!IsValid(Image)) return;
@@ -70,6 +61,7 @@ void FInv_ImageFragment::Assimilate(UInv_CompositeBase* Composite) const
 void FInv_LabeledNumberFragment::Assimilate(UInv_CompositeBase* Composite) const
 {
 	FInv_InventoryItemFragment::Assimilate(Composite);
+	if (!MatchesWidgetTag(Composite)) return;
 
 	UInv_Leaf_LabeledValue* LabeledValue = Cast<UInv_Leaf_LabeledValue>(Composite);
 	if (!IsValid(LabeledValue)) return;
@@ -97,9 +89,20 @@ void FInv_LabeledNumberFragment::Manifest()
 void FInv_TextFragment::Assimilate(UInv_CompositeBase* Composite) const
 {
 	FInv_InventoryItemFragment::Assimilate(Composite);
+	if (!MatchesWidgetTag(Composite)) return;
 
 	UInv_Leaf_Text* TextLeaf = Cast<UInv_Leaf_Text>(Composite);
 	if (!IsValid(TextLeaf)) return;
 
 	TextLeaf->SetText(FragmentText);
+}
+
+void FInv_HealthPotionFragment::OnConsume(APlayerController* PC)
+{
+	GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Green, FString::Printf(TEXT("Health Potion consumed! Healing by: %f"), GetValue()));
+}
+
+void FInv_ManaPotionFragment::OnConsume(APlayerController* PC)
+{
+	GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Blue, FString::Printf(TEXT("Mana Potion consumed! Mana replenished by: %f"), GetValue()));
 }

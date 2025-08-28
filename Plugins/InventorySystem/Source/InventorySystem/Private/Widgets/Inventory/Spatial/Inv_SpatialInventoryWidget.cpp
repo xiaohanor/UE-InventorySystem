@@ -11,8 +11,11 @@
 #include "Components/CanvasPanelSlot.h"
 #include "Components/WidgetSwitcher.h"
 #include "InventoryManagement/Inv_InventoryStatics.h"
+#include "InventoryManagement/Component/Inv_InventoryComponent.h"
 #include "Items/Inv_InventoryItem.h"
 #include "Widgets/Inventory/GridSlots/Inv_EquippedGridSlotWidget.h"
+#include "Widgets/Inventory/HoverItem/Inv_HoverItemWidget.h"
+#include "Widgets/Inventory/SlottedItem/Inv_EquippedSlottedItemWidget.h"
 #include "Widgets/Inventory/Spatial/Inv_InventoryGridWidget.h"
 #include "Widgets/ItemDescription/Inv_ItemDescription.h"
 
@@ -111,6 +114,27 @@ UInv_HoverItemWidget* UInv_SpatialInventoryWidget::GetHoverItem() const
 	return ActiveGrid->GetHoverItem();
 }
 
+bool UInv_SpatialInventoryWidget::CanEquipHoverItem(UInv_EquippedGridSlotWidget* EquippedGridSlot,
+	const FGameplayTag& EquipmentTypeTag) const
+{
+	if (!IsValid(EquippedGridSlot) || EquippedGridSlot->GetInventoryItem().IsValid()) return false;
+
+	UInv_HoverItemWidget* HoverItem = GetHoverItem();
+	if (!IsValid(HoverItem)) return false;
+
+	UInv_InventoryItem* HeldItem = HoverItem->GetInventoryItem();
+
+	return HasHoverItem() && IsValid(HeldItem) &&
+		!HoverItem->IsStackable() &&
+			HeldItem->GetItemManifest().GetItemCategory() == EInv_ItemCategory::Equippable &&
+				HeldItem->GetItemManifest().GetItemType().MatchesTag(EquipmentTypeTag);
+}
+
+float UInv_SpatialInventoryWidget::GetTileSize() const
+{
+	return Grid_Equippables->GetTileSize();
+}
+
 UInv_ItemDescription* UInv_SpatialInventoryWidget::GetItemDescription()
 {
 	if (!IsValid(ItemDescription))
@@ -139,6 +163,35 @@ void UInv_SpatialInventoryWidget::ShowCraftables()
 
 void UInv_SpatialInventoryWidget::EquippedGridSlotClicked(UInv_EquippedGridSlotWidget* EquippedGridSlot,
 	const FGameplayTag& EquipmentTypeTag)
+{
+	if (!CanEquipHoverItem(EquippedGridSlot, EquipmentTypeTag)) return;
+
+	UInv_HoverItemWidget* HoverItem = GetHoverItem();
+	// 创建一个已装备的槽位物品并将其添加到已装备的网格槽位（调用 EquippedGridSlot->OnItemEquipped()）
+	const float TileSize = UInv_InventoryStatics::GetInventoryWidget(GetOwningPlayer())->GetTileSize();
+	UInv_EquippedSlottedItemWidget* EquippedSlottedItem = EquippedGridSlot->OnItemEquipped(
+		HoverItem->GetInventoryItem(),
+		EquipmentTypeTag,
+		TileSize
+	);
+	EquippedSlottedItem->OnEquippedSlottedItemClicked.AddDynamic(this, &ThisClass::EquippedSlottedItemClicked);
+
+	// 清除悬停物品
+	Grid_Equippables->ClearHoverItem();
+	
+	// 通知服务器我们已经装备了一个物品（可能也卸下了一个物品）
+	UInv_InventoryComponent* InventoryComponent = UInv_InventoryStatics::GetInventoryComponent(GetOwningPlayer());
+	check(IsValid(InventoryComponent)); 
+
+	InventoryComponent->Server_EquipSlotClicked(HoverItem->GetInventoryItem(), nullptr);
+
+	if (GetOwningPlayer()->GetNetMode() != NM_DedicatedServer)
+	{
+		InventoryComponent->OnItemEquipped.Broadcast(HoverItem->GetInventoryItem());
+	}
+}
+
+void UInv_SpatialInventoryWidget::EquippedSlottedItemClicked(UInv_EquippedSlottedItemWidget* SlottedItem)
 {
 	
 }

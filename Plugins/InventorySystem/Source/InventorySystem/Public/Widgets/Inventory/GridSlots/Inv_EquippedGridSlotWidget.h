@@ -7,7 +7,10 @@
 #include "Inv_GridSlotWidget.h"
 #include "Inv_EquippedGridSlotWidget.generated.h"
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FEquippedGridSlotClicked, UInv_EquippedGridSlotWidget*, GridSlot, const FGameplayTag&, EquipmentTypeTag);
+class UOverlay;
+class UInv_EquippedSlottedItemWidget;
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FEquippedGridSlotClicked, UInv_EquippedGridSlotWidget*, GridSlot,
+                                             const FGameplayTag&, EquipmentTypeTag);
 
 /**
  * 角色装备格子
@@ -21,13 +24,23 @@ public:
 	virtual void NativeOnMouseEnter(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;
 	virtual void NativeOnMouseLeave(const FPointerEvent& InMouseEvent) override;
 	virtual FReply NativeOnMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;
+	UInv_EquippedSlottedItemWidget* OnItemEquipped(UInv_InventoryItem* Item, const FGameplayTag& EquipmentTag, float TileSize);
 
 	FEquippedGridSlotClicked EquippedGridSlotClicked;
 
 private:
-	UPROPERTY(EditAnywhere, Category = "Inventory", meta = (Categories = "GameItems.Equipment"))
-	FGameplayTag EquipmentTypeTag;
-
 	UPROPERTY(meta = (BindWidget))
 	TObjectPtr<UImage> Image_GrayedOutIcon;
+
+	UPROPERTY(meta = (BindWidget))
+	TObjectPtr<UOverlay> Overlay_Root;
+	
+	UPROPERTY(EditAnywhere, Category = "Inventory", meta = (Categories = "GameItems.Equipment"))
+	FGameplayTag EquipmentTypeTag;
+	
+	UPROPERTY(EditDefaultsOnly, Category = "Inventory")
+	TSubclassOf<UInv_EquippedSlottedItemWidget> EquippedSlottedItemWidgetClass;
+
+	UPROPERTY()
+	TObjectPtr<UInv_EquippedSlottedItemWidget> EquippedSlottedItemWidget;
 };

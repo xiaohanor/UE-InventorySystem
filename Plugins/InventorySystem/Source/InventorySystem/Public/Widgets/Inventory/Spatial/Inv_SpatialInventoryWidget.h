@@ -6,6 +6,7 @@
 #include "Widgets/Inventory/InventoryBase/Inv_InventoryBaseWidget.h"
 #include "Inv_SpatialInventoryWidget.generated.h"
 
+class UInv_EquippedSlottedItemWidget;
 struct FGameplayTag;
 class UInv_EquippedGridSlotWidget;
 class UInv_ItemDescription;
@@ -31,6 +32,8 @@ public:
 	virtual void OnItemUnHovered() override;
 	virtual bool HasHoverItem() const override;
 	virtual UInv_HoverItemWidget* GetHoverItem() const override;
+	bool CanEquipHoverItem(UInv_EquippedGridSlotWidget* EquippedGridSlot, const FGameplayTag& EquipmentTypeTag) const;
+	virtual float GetTileSize() const override;
 	
 private:
 	TWeakObjectPtr<UInv_InventoryGridWidget> ActiveGrid;
@@ -86,6 +89,9 @@ private:
 
 	UFUNCTION()
 	void EquippedGridSlotClicked(UInv_EquippedGridSlotWidget* EquippedGridSlot, const FGameplayTag& EquipmentTypeTag);
+
+	UFUNCTION()
+	void EquippedSlottedItemClicked(UInv_EquippedSlottedItemWidget* SlottedItem);
 	
 	void DisableButton(UButton* Button);
 	void SetActiveGrid(UInv_InventoryGridWidget* Grid, UButton* Button);

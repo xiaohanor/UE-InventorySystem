@@ -175,14 +175,14 @@ void UInv_SpatialInventoryWidget::EquippedGridSlotClicked(UInv_EquippedGridSlotW
 		TileSize
 	);
 	EquippedSlottedItem->OnEquippedSlottedItemClicked.AddDynamic(this, &ThisClass::EquippedSlottedItemClicked);
-
-	// 清除悬停物品
-	Grid_Equippables->ClearHoverItem();
 	
 	// 通知服务器我们已经装备了一个物品（可能也卸下了一个物品）
 	UInv_InventoryComponent* InventoryComponent = UInv_InventoryStatics::GetInventoryComponent(GetOwningPlayer());
 	check(IsValid(InventoryComponent)); 
 	InventoryComponent->Server_EquipSlotClicked(HoverItem->GetInventoryItem(), nullptr);
+	
+	// 清除悬停物品
+	Grid_Equippables->ClearHoverItem();
 }
 
 void UInv_SpatialInventoryWidget::EquippedSlottedItemClicked(UInv_EquippedSlottedItemWidget* EquippedSlottedItem)

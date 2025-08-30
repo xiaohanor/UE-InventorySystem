@@ -6,6 +6,7 @@
 
 #include "Inv_ItemFragment.generated.h"
 
+class AInv_EquipActor;
 struct FInv_EquipModifier;
 struct FInv_ConsumeModifier;
 
@@ -206,10 +207,26 @@ struct FInv_EquipmentFragment : public FInv_InventoryItemFragment
 	void OnUnequip(APlayerController* PC);
 	virtual void Assimilate(UInv_CompositeBase* Composite) const override;
 	virtual void Manifest() override;
-private:
 
+	AInv_EquipActor* SpawnAttachedActor(USkeletalMeshComponent* AttachMesh) const;
+	void DestroyAttachedActor() const;
+	FGameplayTag GetEquipmentType() const { return EquipmentType; }
+	void SetEquippedActor(const AInv_EquipActor* EquipActor);
+	
+private:
+	TWeakObjectPtr<AInv_EquipActor> EquippedActor = nullptr;
+	
 	UPROPERTY(EditAnywhere, Category = "Inventory")
 	TArray<TInstancedStruct<FInv_EquipModifier>> EquipModifiers;
+
+	UPROPERTY(EditAnywhere, Category = "Inventory")
+	TSubclassOf<AInv_EquipActor> EquipActorClass = nullptr;
+
+	UPROPERTY(EditAnywhere, Category = "Inventory")
+	FName SocketAttachPoint{NAME_None};
+
+	UPROPERTY(EditAnywhere, Category = "Inventory", meta = (Categories = "GameItems.Equipment"))
+	FGameplayTag EquipmentType = FGameplayTag::EmptyTag;
 };
 
 USTRUCT(BlueprintType)

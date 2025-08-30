@@ -5,6 +5,7 @@
 
 #include "GameFramework/Character.h"
 #include "InventoryManagement/Component/Inv_InventoryComponent.h"
+#include "InventoryManagement/EquipActor/Inv_EquipActor.h"
 #include "Items/Inv_InventoryItem.h"
 #include "Items/Fragments/Inv_ItemFragment.h"
 #include "Items/Manifest/Inv_ItemManifest.h"
@@ -40,6 +41,16 @@ void UInv_EquipmentComponent::InitInventoryComponent()
 	}
 }
 
+AInv_EquipActor* UInv_EquipmentComponent::SpawnEquippedActor(FInv_EquipmentFragment* EquipmentFragment,
+	const FInv_ItemManifest& Manifest, USkeletalMeshComponent* AttachMesh)
+{
+	AInv_EquipActor* SpawnedEquipActor = EquipmentFragment->SpawnAttachedActor(AttachMesh);
+	SpawnedEquipActor->SetEquipmentType(EquipmentFragment->GetEquipmentType()); //已经在蓝图设置了，为什么这里要再设置一次？
+	SpawnedEquipActor->SetOwner(GetOwner());
+	EquipmentFragment->SetEquippedActor(SpawnedEquipActor);
+	return SpawnedEquipActor;
+}
+
 void UInv_EquipmentComponent::OnItemEquipped(UInv_InventoryItem* EquippedItem)
 {
 	if (!IsValid(EquippedItem)) return;
@@ -50,6 +61,11 @@ void UInv_EquipmentComponent::OnItemEquipped(UInv_InventoryItem* EquippedItem)
 	if (!EquipmentFragment) return;
 
 	EquipmentFragment->OnEquip(OwningPlayerController.Get());
+
+	if (!OwningSkeletalMesh.IsValid()) return;
+	AInv_EquipActor* SpawnedEquipActor = SpawnEquippedActor(EquipmentFragment, ItemManifest, OwningSkeletalMesh.Get()); // 这个Manifest有必要吗？
+
+	EquippedActors.Add(SpawnedEquipActor);
 }
 
 void UInv_EquipmentComponent::OnItemUnequipped(UInv_InventoryItem* UnequippedItem)

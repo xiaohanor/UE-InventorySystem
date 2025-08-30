@@ -91,9 +91,15 @@ private:
 	void EquippedGridSlotClicked(UInv_EquippedGridSlotWidget* EquippedGridSlot, const FGameplayTag& EquipmentTypeTag);
 
 	UFUNCTION()
-	void EquippedSlottedItemClicked(UInv_EquippedSlottedItemWidget* SlottedItem);
+	void EquippedSlottedItemClicked(UInv_EquippedSlottedItemWidget* EquippedSlottedItem);
 	
 	void DisableButton(UButton* Button);
 	void SetActiveGrid(UInv_InventoryGridWidget* Grid, UButton* Button);
 	void SetItemDescriptionSizeAndPosition(UInv_ItemDescription* Description, UCanvasPanel* Canvas) const;
+	UInv_EquippedGridSlotWidget* FindSlotWithEquippedItem(UInv_InventoryItem* EquippedItem) const;
+	void ClearSlotOfItem(UInv_EquippedGridSlotWidget* EquippedGridSlot);
+	void RemoveEquippedSlottedItem(UInv_EquippedSlottedItemWidget* EquippedSlottedItem);
+	void MakeEquippedSlottedItem(UInv_EquippedSlottedItemWidget* EquippedSlottedItem, UInv_EquippedGridSlotWidget* EquippedGridSlot, UInv_InventoryItem* ItemToEquip);
+	void BroadcastSlotClickedDelegates(UInv_InventoryItem* ItemToEquip, UInv_InventoryItem* ItemToUnequip) const;
+	
 };

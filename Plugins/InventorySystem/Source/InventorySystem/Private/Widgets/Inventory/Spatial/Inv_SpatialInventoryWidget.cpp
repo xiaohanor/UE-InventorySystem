@@ -182,18 +182,38 @@ void UInv_SpatialInventoryWidget::EquippedGridSlotClicked(UInv_EquippedGridSlotW
 	// 通知服务器我们已经装备了一个物品（可能也卸下了一个物品）
 	UInv_InventoryComponent* InventoryComponent = UInv_InventoryStatics::GetInventoryComponent(GetOwningPlayer());
 	check(IsValid(InventoryComponent)); 
-
 	InventoryComponent->Server_EquipSlotClicked(HoverItem->GetInventoryItem(), nullptr);
-
-	if (GetOwningPlayer()->GetNetMode() != NM_DedicatedServer)
-	{
-		InventoryComponent->OnItemEquipped.Broadcast(HoverItem->GetInventoryItem());
-	}
 }
 
-void UInv_SpatialInventoryWidget::EquippedSlottedItemClicked(UInv_EquippedSlottedItemWidget* SlottedItem)
+void UInv_SpatialInventoryWidget::EquippedSlottedItemClicked(UInv_EquippedSlottedItemWidget* EquippedSlottedItem)
 {
+	// 移除物品描述
+	UInv_InventoryStatics::ItemUnhovered(GetOwningPlayer());
+
+	if (IsValid(GetHoverItem()) && GetHoverItem()->IsStackable()) return;
+	// 获取要装备的物品
+	UInv_InventoryItem* ItemToEquip = IsValid(GetHoverItem()) ? GetHoverItem()->GetInventoryItem() : nullptr;
 	
+	// 获取要卸下的物品
+	UInv_InventoryItem* ItemToUnequip = EquippedSlottedItem->GetInventoryItem();
+	
+	// 获取持有此物品的已装备网格槽
+	UInv_EquippedGridSlotWidget* EquippedGridSlot = FindSlotWithEquippedItem(ItemToUnequip);
+
+	// 清除此物品的已装备网格槽（将其库存物品设置为空）
+	ClearSlotOfItem(EquippedGridSlot);
+	
+	// 将之前装备的物品指定为悬停物品
+	Grid_Equippables->AssignHoverItem(ItemToUnequip);
+	
+	// 从已装备网格槽中移除已装备槽位物品
+	RemoveEquippedSlottedItem(EquippedSlottedItem);
+	
+	// 创建新的已装备槽位物品（用于我们 HoverItem 中持有的物品）
+	MakeEquippedSlottedItem(EquippedSlottedItem, EquippedGridSlot, ItemToEquip);
+	
+	// 广播 OnItemEquipped/OnItemUnequipped 的委托（来自 IC）
+	BroadcastSlotClickedDelegates(ItemToEquip, ItemToUnequip);
 }
 
 void UInv_SpatialInventoryWidget::DisableButton(UButton* Button)
@@ -206,7 +226,11 @@ void UInv_SpatialInventoryWidget::DisableButton(UButton* Button)
 
 void UInv_SpatialInventoryWidget::SetActiveGrid(UInv_InventoryGridWidget* Grid, UButton* Button)
 {
-	if (ActiveGrid.IsValid()) ActiveGrid->HideCursor();
+	if (ActiveGrid.IsValid())
+	{
+		ActiveGrid->HideCursor();
+		ActiveGrid->OnHide();
+	}
 	ActiveGrid = Grid;
 	if (ActiveGrid.IsValid()) ActiveGrid->ShowCursor();
 	DisableButton(Button);
@@ -228,4 +252,58 @@ void UInv_SpatialInventoryWidget::SetItemDescriptionSizeAndPosition(UInv_ItemDes
 		UWidgetLayoutLibrary::GetMousePositionOnViewport(GetOwningPlayer()));
 
 	ItemDescriptionCPS->SetPosition(ClampedPosition);
+}
+
+UInv_EquippedGridSlotWidget* UInv_SpatialInventoryWidget::FindSlotWithEquippedItem(
+	UInv_InventoryItem* EquippedItem) const
+{
+	auto* FoundEquippedGridSlot  = EquippedGridSlots.FindByPredicate([EquippedItem](const UInv_EquippedGridSlotWidget* GridSlot)
+	{
+		return GridSlot->GetInventoryItem() == EquippedItem;
+	});
+	return FoundEquippedGridSlot  ? *FoundEquippedGridSlot  : nullptr;
+}
+
+void UInv_SpatialInventoryWidget::ClearSlotOfItem(UInv_EquippedGridSlotWidget* EquippedGridSlot)
+{
+	if (IsValid(EquippedGridSlot))
+	{
+		EquippedGridSlot->SetEquippedSlottedItem(nullptr);
+		EquippedGridSlot->SetInventoryItem(nullptr);
+	}
+}
+
+void UInv_SpatialInventoryWidget::RemoveEquippedSlottedItem(UInv_EquippedSlottedItemWidget* EquippedSlottedItem)
+{
+	// （从 OnEquippedSlottedItemClicked 解绑）
+	// 从父级移除已装备槽位物品
+	if (!IsValid(EquippedSlottedItem)) return;
+
+	if (EquippedSlottedItem->OnEquippedSlottedItemClicked.IsAlreadyBound(this, &ThisClass::EquippedSlottedItemClicked))
+	{
+		EquippedSlottedItem->OnEquippedSlottedItemClicked.RemoveDynamic(this, &ThisClass::EquippedSlottedItemClicked);
+	}
+	EquippedSlottedItem->RemoveFromParent();
+}
+
+void UInv_SpatialInventoryWidget::MakeEquippedSlottedItem(UInv_EquippedSlottedItemWidget* EquippedSlottedItem,
+	UInv_EquippedGridSlotWidget* EquippedGridSlot, UInv_InventoryItem* ItemToEquip)
+{
+	if (!IsValid(EquippedGridSlot)) return;
+
+	UInv_EquippedSlottedItemWidget* SlottedItem = EquippedGridSlot->OnItemEquipped(
+		ItemToEquip,
+		EquippedSlottedItem->GetEquipmentTypeTag(),
+		UInv_InventoryStatics::GetInventoryWidget(GetOwningPlayer())->GetTileSize());
+	if (IsValid(SlottedItem)) SlottedItem->OnEquippedSlottedItemClicked.AddDynamic(this, &ThisClass::EquippedSlottedItemClicked);
+
+	EquippedGridSlot->SetEquippedSlottedItem(SlottedItem);
+}
+
+void UInv_SpatialInventoryWidget::BroadcastSlotClickedDelegates(UInv_InventoryItem* ItemToEquip,
+	UInv_InventoryItem* ItemToUnequip) const
+{
+	UInv_InventoryComponent* InventoryComponent = UInv_InventoryStatics::GetInventoryComponent(GetOwningPlayer());
+	check(IsValid(InventoryComponent));
+	InventoryComponent->Server_EquipSlotClicked(ItemToEquip, ItemToUnequip);
 }
